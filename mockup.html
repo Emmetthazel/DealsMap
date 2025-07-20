@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DealsMap - MVP Mockups</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .mockup-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 30px;
+            color: #3498db;
+            text-align: center;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #3498db;
+            transform: translateX(5px);
+        }
+
+        .content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .mockup-screen {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .mockup-screen.active {
+            display: block;
+        }
+
+        .screen-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .screen-content {
+            padding: 0;
+        }
+
+        /* Header Component */
+        .app-header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 30px;
+        }
+
+        .header-nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .header-nav a:hover {
+            color: #3498db;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #3498db;
+            border: 2px solid #3498db;
+        }
+
+        .btn-secondary:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        /* Map Interface */
+        .map-container {
+            height: 70vh;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .search-bar {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 16px;
+        }
+
+        .filter-dropdown {
+            background: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .map-markers {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #e74c3c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        .marker:hover {
+            transform: scale(1.2);
+        }
+
+        .marker-1 { top: 30%; left: 40%; }
+        .marker-2 { top: 60%; left: 60%; }
+        .marker-3 { top: 45%; left: 25%; }
+        .marker-4 { top: 70%; left: 80%; }
+
+        /* Deal Cards */
+        .deals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .deal-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .deal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .deal-image {
+            height: 200px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            position: relative;
+        }
+
+        .deal-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e74c3c;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .deal-content {
+            padding: 20px;
+        }
+
+        .deal-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .deal-business {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .deal-price {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .price-old {
+            text-decoration: line-through;
+            color: #7f8c8d;
+        }
+
+        .price-new {
+            font-size: 20px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .deal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .deal-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #f39c12;
+        }
+
+        .deal-expiry {
+            font-size: 12px;
+            color: #e74c3c;
+            font-weight: 500;
+        }
+
+        /* Forms */
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Dashboard */
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon.deals { color: #3498db; }
+        .stat-icon.views { color: #27ae60; }
+        .stat-icon.reviews { color: #f39c12; }
+        .stat-icon.revenue { color: #e74c3c; }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        /* Tables */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 20px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-expired {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .mockup-container {
+                flex-direction: column;
+            }
+
+            .header-nav {
+                display: none;
+            }
+
+            .deals-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #2c3e50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-highlight i {
+            color: #f39c12;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mockup-container">
+        <div class="sidebar">
+            <h2><i class="fas fa-map-marked-alt"></i> DealsMap</h2>
+            <div class="nav-item active" onclick="showScreen('home')">
+                <i class="fas fa-home"></i> Accueil
+            </div>
+            <div class="nav-item" onclick="showScreen('map')">
+                <i class="fas fa-map"></i> Carte Interactive
+            </div>
+            <div class="nav-item" onclick="showScreen('deals')">
+                <i class="fas fa-tags"></i> Liste des Deals
+            </div>
+            <div class="nav-item" onclick="showScreen('business-detail')">
+                <i class="fas fa-store"></i> Détail Établissement
+            </div>
+            <div class="nav-item" onclick="showScreen('login')">
+                <i class="fas fa-sign-in-alt"></i> Connexion
+            </div>
+            <div class="nav-item" onclick="showScreen('register')">
+                <i class="fas fa-user-plus"></i> Inscription
+            </div>
+            <div class="nav-item" onclick="showScreen('dashboard')">
+                <i class="fas fa-tachometer-alt"></i> Dashboard Propriétaire
+            </div>
+            <div class="nav-item" onclick="showScreen('business-form')">
+                <i class="fas fa-plus-circle"></i> Ajouter Établissement
+            </div>
+            <div class="nav-item" onclick="showScreen('deal-form')">
+                <i class="fas fa-percent"></i> Créer Deal
+            </div>
+            <div class="nav-item" onclick="showScreen('profile')">
+                <i class="fas fa-user"></i> Profil
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Home Screen -->
+            <div id="home" class="mockup-screen active">
+                <div class="screen-header">
+                    <h1><i class="fas fa-home"></i> Page d'Accueil</h1>
+                    <p>Interface principale de l'application</p>
+                </div>
+                <div class="screen-content">
+                    <div class="app-header">
+                        <div class="logo">
+                            <i class="fas fa-map-marked-alt"></i>
+                            DealsMap
+                        </div>
+                        <div class="header-nav">
+                            <a href="#" onclick="showScreen('map')">Carte</a>
+                            <a href="#" onclick="showScreen('deals')">Deals</a>
+                            <a href="#" onclick="showScreen('business-detail')">Établissements</a>
+                        </div>
+                        <div class="header-actions">
+                            <a href="#" class="btn btn-secondary" onclick="showScreen('login')">
+                                <i class="fas fa-sign-in-alt"></i> Connexion
+                            </a>
+                            <a href="#" class="btn btn-primary" onclick="showScreen('register')">
+                                <i class="fas fa-user-plus"></i> Inscription
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-highlight">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>Découvrez les meilleures offres près de chez vous !</strong><br>
+                            Explorez la carte interactive et trouvez des deals exclusifs dans votre région.
+                        </div>
+                    </div>
+
+                    <div class="map-container">
+                        <div class="map-overlay">
+                            <input type="text" class="search-bar" placeholder="Rechercher un établissement, une ville...">
+                            <select class="filter-dropdown">
+                                <option>Toutes catégories</option>
+                                <option>Restaurants</option>
+                                <option>Pâtisseries</option>
+                                <option>Centres de jeux</option>
+                                <option>Spas</option>
+                            </select>
+                        </div>
+                        <div class="map-markers">
+                            <div class="marker marker-1"><i class="fas fa-utensils"></i></div>
+                            <div class="marker marker-2"><i class="fas fa-birthday-cake"></i></div>
+                            <div class="marker marker-3"><i class="fas fa-gamepad"></i></div>
+                            <div class="marker marker-4"><i class="fas fa-spa"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="deals-grid">
+                        <div class="deal-card">
+                            <div class="deal-image">
+                                <i class="fas fa-utensils"></i>
+                                <div class="deal-badge">-30%</div>
+                            </div>
+                            <div class="deal-content">
+                                <div class="deal-title">Menu Découverte</div>
+                                <div class="deal-business">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Restaurant Le Savoureux
+                                </div>
+                                <div class="deal-price">
+                                    <span class="price-old">150 DH</span>
+                                    <span class="price-new">105 DH</span>
+                                </div>
+                                <div class="deal-footer">
+                                    <div class="deal-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>4.5</span>
+                                    </div>
+                                    <div class="deal-expiry">Expire dans 5 jours</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deal-card">
+                            <div class="deal-image" style="background: linear-gradient(45deg, #ff9ff3, #f368e0);">
+                                <i class="fas fa-birthday-cake"></i>
+                                <div class="deal-badge">-25%</div>
+                            </div>
+                            <div class="deal-content">
+                                <div class="deal-title">Gâteau Personnalisé</div>
+                                <div class="deal-business">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Pâtisserie Délice
+                                </div>
+                                <div class="deal-price">
+                                    <span class="price-old">200 DH</span>
+                                    <span class="price-new">150 DH</span>
+                                </div>
+                                <div class="deal-footer">
+                                    <div class="deal-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>4.8</span>
+                                    </div>
+                                    <div class="deal-expiry">Expire dans 12 jours</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deal-card">
+                            <div class="deal-image" style="background: linear-gradient(45deg, #54a0ff, #2e86de);">
+                                <i class="fas fa-gamepad"></i>
+                                <div class="deal-badge">-40%</div>
+                            </div>
+                            <div class="deal-content">
+                                <div class="deal-title">Session Gaming 2h</div>
+                                <div class="deal-business">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    GameZone Center
+                                </div>
+                                <div class="deal-price">
+                                    <span class="price-old">100 DH</span>
+                                    <span class="price-new">60 DH</span>
+                                </div>
+                                <div class="deal-footer">
+                                    <div class="deal-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>4.3</span>
+                                    </div>
+                                    <div class="deal-expiry">Expire dans 8 jours</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Screen -->
+            <div id="map" class="mockup-screen">
+                <div class="screen-header">
+                    <h1><i class="fas fa-map"></i> Carte Interactive</h1>
+                    <p>Explorez les établissements avec des deals actifs</p>
+                </div>
+                <div class="screen-content">
+                    <div class="app-header">
+                        <div class="logo">
+                            <i class="fas fa-map-marked-alt"></i>
+                            DealsMap
+                        </div>
+                        <div class="header-nav">
+                            <a href="#" onclick="showScreen('home')">Accueil</a>
+                            <a href="#" onclick="showScreen('deals')">Deals</a>
+                            <a href="#" onclick="showScreen('business-detail')">Établissements</a>
+                        </div>
+                        <div class="header-actions">
+                            <a href="#" class="btn btn-secondary">
+                                <i class="fas fa-user"></i> Mon Profil
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="map-container" style="height: 80vh;">
+                        <div class="map-overlay">
+                            <input type="text" class="search-bar" placeholder="Rechercher par lieu, nom d'établissement...">
+                            <select class="filter-dropdown">
+                                <option>Toutes catégories</option>
+                                <option>🍽️ Restaurants</option>
+                                <option>🧁 Pâtisseries</option>
+                                <option>🎮 Centres de jeux</option>
+                                <option>🧘 Spas & Bien-être</option>
+                            </select>
+                            <select class="filter-dropdown">
+                                <option>Toutes distances</option>
+                                <option>< 1 km</option>
+                                <option>< 5 km</option>
+                                <option>< 10 km</option>
+                            </select>
+                        </div>
+                        <div class="map-markers">
+                            <div class="marker marker-1" onclick="showBusinessPreview('Restaurant Le Savoureux')">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <div class="marker marker-2" onclick="showBusinessPreview('Pâtisserie Délice')">
+                                <i class="fas fa-birthday-cake"></i>
+                            </div>
+                            <div class="marker marker-3" onclick="showBusinessPreview('GameZone Center')">
+                                <i class="fas fa-gamepad"></i>
+                            </div>
+                            <div class="marker marker-4" onclick="showBusinessPreview('Spa Relaxation')">
+                                <i class="fas fa-spa"></i>
+                            </div>
+                        </div>
+                        <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 25px; font-size: 14px;">
+                            <i class="fas fa-info-circle"></i> Cliquez sur les marqueurs pour voir les détails
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deals List Screen -->
+            <div id="deals" class="mockup-screen">
+                <div class="screen-header">
+                    <h1><i class="fas fa-tags"></i> Liste des Deals</h1>
+                    <p>Tous les deals disponibles près de vous</p>
+                </div>
+                <div class="screen-content">
+                    <div class="app-header">
+                        <div class="logo">
+                            <i class="fas fa-map-marked-alt"></i>
+                            DealsMap
+                        </div>
+                        <div class="header-nav">
+                            <a href="#" onclick="showScreen('home')">Accueil</a>
+                            <a href="#" onclick="showScreen('map')">Carte</a>
+                            <a href="#" onclick="showScreen('business-detail')">Établissements</a>
+                        </div>
+                        <div class="header-actions">
+                            <a href="#" class="btn btn-secondary">
+                                <i class="fas fa-user"></i> Mon Profil
+                            </a>
+                        </div>
+                    </div>
+
+                    <div style="padding: 20px; display: flex; gap: 20px; align-items: center; background: white; border-bottom: 1px solid #eee;">
+                        <input type="text" class="search-bar" placeholder="Rechercher un deal..." style="flex: 1;">
+                        <select class="filter-dropdown" style="box-shadow: none; border: 2px solid #ddd;">
+                            <option>Toutes catégories</option>
+                            <option>🍽️ Restaurants</option>
+                            <option>🧁 Pâtisseries</option>
+                            <option>🎮 Centres de jeux</option>
+                            <option>🧘 Spas & Bien-être</option>
+                        </select>
+                        <select class="filter-dropdown" style="box-shadow: none; border: 2px solid #ddd;">
+                            <option>Trier par</option>
+                            <option>Date d'expiration</option>
+                            <option>Pourcentage de réduction</option>
+                            <option>Note des clients</option>
+                            <option>Prix</option>
+                        </select>
+                    </div>
+
+                    <div class="deals-grid">
+                        <div class="deal-card">
+                            <div class="deal-image">
+                                <i class="fas fa-utensils"></i>
+                                <div class="deal-badge">-30%</div>
+                            </div>
+                            <div class="deal-content">
+                                <div class="deal-title">Menu Découverte Complet</div>
+                                <div class="deal-business">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Restaurant Le Savoureux - Casablanca
+                                </div>
+                                <div class="deal-price">
+                                    <span class="price-old">150 DH</span>
+                                    <span class="price-new">105 DH</span>
+                                </div>
+                                <div class="deal-footer">
+                                    <div class="deal-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>4.5 (23 avis)</span>
+                                    </div>
+                                    <div class="deal-expiry">Expire dans 5 jours</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deal-card">
+                            <div class="deal-image" style="background: linear-gradient(45deg, #ff9ff3, #f368e0);">
+                                <i class="fas fa-birthday-cake"></i>
+                                <div class="deal-badge">-25%</div>
+                            </div>
+                            <div class="deal-content">
+                                <div class="deal-title">Gâteau Personnalisé + Décoration</div>
+                                <div class="deal-business">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Pâtisserie Délice - Maarif
+                                </div>
+                                <div class="deal-price">
+                                    <span class="price-old">200 DH</span>
+                                    <span class="price-new">150 DH</span>
+                                </div>
+                                <div class="deal-footer">
+                                    <div class="deal-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>4.8 (15 avis)</span>
+                                    </div>
+                                    <div class="deal-expiry">Expire dans 12 jours</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deal-card">
+                            <div class="deal-image" style="background: linear-gradient(45deg, #54a0ff, #2e86de);">
+                                <i class="fas fa-gamepad"></i>
+                                <div class="deal-badge">-40%</div>
+                            </div>
+                            <div class="deal-content">
+                                <div class="deal-title">Session Gaming 2h + Boissons</div>
+                                <div class="deal-business">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    GameZone Center - Ain Diab
+                                </div>
+                                <div class="deal-price">
+                                    <span class="price-old">100 DH</span>
+                                    <span class="price-new">60 DH</span>
+                                </div>
+                                <div class="deal-footer">
+                                    <div class="deal-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>4.3 (31 avis)</span>
+                                    </div>
+                                    <div class="deal-expiry">Expire dans 8 jours</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deal-card">
+                            <div class="deal-image" style="background: linear-gradient(45deg, #5f27cd, #341f97);">
+                                <i class="fas fa-spa"></i>
+                                <div class="deal-badge">-35%</div>
+                            </div>
+                            <div class="deal-content">
+                                <div class="deal-title">Massage Relaxant 90min</div>
+                                <div class="deal-business">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Spa Relaxation - Racine
+                                </div>
+                                <div class="deal-price">
+                                    <span class="price-old">300 DH</span>
+                                    <span class="price-new">195 DH</span>
+                                </div>
+                                <div class="deal-footer">
+                                    <div class="deal-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>4.9 (8 avis)</span>
+                                    </div>
+                                    <div class="deal-expiry">Expire dans 18 jours</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deal-card">
+                            <div class="deal-image" style="background: linear-gradient(45deg, #00d2d3, #54a0ff);">
+                                <i class="fas fa-dumbbell"></i>
+                                <div class="deal-badge">-50%</div>
+                            </div>
+                            <div class="deal-content">
+                                <div class="deal-title">Abonnement Fitness 1 mois</div>
+                                <div class="deal-business">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    FitGym Pro - Bourgogne
+                                </div>
+                                <div class="deal-price">
+                                    <span class="price-old">400 DH</span>
+                                    <span class="price-new">200 DH</span>
+                                </div>
+                                <div class="deal-footer">
+                                    <div class="deal-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>4.2 (44 avis)</span>
+                                    </div>
+                                    <div class="deal-expiry">Expire dans 3 jours</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deal-card">
+                            <div class="deal-image" style="background: linear-gradient(45deg, #ff6348, #ff4757);">
+                                <i class="fas fa-cut"></i>
+                                <div class="deal-badge">-20%</div>
+                            </div>
+                            <div class="deal-content">
+                                <div class="deal-title">Coupe + Brushing + Soin</div>
+                                <div class="deal-business">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Salon Élégance - CIL
+                                </div>
+                                <div class="deal-price">
+                                    <span class="price-old">120 DH</span>
+                                    <span class="price-new">96 DH</span>
+                                </div>
+                                <div class="deal-footer">
+                                    <div class="deal-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>4.6 (19 avis)</span>
+                                    </div>
+                                    <div class="deal-expiry">Expire dans 14 jours</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Detail Screen -->
+            <div id="business-detail" class="mockup-screen">
+                <div class="screen-header">
+                    <h1><i class="fas fa-store"></i> Détail Établissement</h1>
+                    <p>Informations complètes et deals disponibles</p>
+                </div>
+                <div class="screen-content">
+                    <div class="app-header">
+                        <div class="logo">
+                            <i class="fas fa-map-marked-alt"></i>
+                            DealsMap
+                        </div>
+                        <div class="header-nav">
+                            <a href="#" onclick="showScreen('home')">Accueil</a>
+                            <a href="#" onclick="showScreen('map')">Carte</a>
+                            <a href="#" onclick="showScreen('deals')">Deals</a>
+                        </div>
+                        <div class="header-actions">
+                            <a href="#" class="btn btn-secondary">
+                                <i class="fas fa-user"></i> Mon Profil
+                            </a>
+                        </div>
+                    </div>
+
+                    <div style="padding: 0;">
+                        <!-- Business Header -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px;">
+                            <div style="max-width: 1200px; margin: 0 auto; display: flex; gap: 30px; align-items: center;">
+                                <div style="width: 120px; height: 120px; background: rgba(255,255,255,0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 48px;">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h1 style="font-size: 32px; margin-bottom: 10px;">Restaurant Le Savoureux</h1>
+                                    <p style="font-size: 18px; opacity: 0.9; margin-bottom: 15px;">Cuisine traditionnelle marocaine et internationale</p>
+                                    <div style="display: flex; gap: 20px; align-items: center;">
+                                        <div style="display: flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-star" style="color: #f39c12;"></i>
+                                            <span style="font-weight: bold;">4.5</span>
+                                            <span style="opacity: 0.8;">(127 avis)</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <span>123 Bd Mohammed V, Casablanca</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-clock"></i>
+                                            <span>Ouvert jusqu'à 23h</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="btn btn-primary" style="background: rgba(255,255,255,0.2); border: 2px solid white; margin-bottom: 10px;">
+                                        <i class="fas fa-heart"></i> Ajouter aux favoris
+                                    </div>
+                                    <div class="btn btn-primary" style="background: rgba(255,255,255,0.2); border: 2px solid white;">
+                                        <i class="fas fa-share"></i> Partager
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Business Info Tabs -->
+                        <div style="padding: 0 20px; background: white; border-bottom: 1px solid #eee;">
+                            <div style="max-width: 1200px; margin: 0 auto; display: flex; gap: 40px;">
+                                <div class="tab-item active" style="padding: 20px 0; border-bottom: 3px solid #3498db; color: #3498db; font-weight: bold; cursor: pointer;">
+                                    Deals Actifs (3)
+                                </div>
+                                <div class="tab-item" style="padding: 20px 0; color: #7f8c8d; cursor: pointer;">
+                                    Informations
+                                </div>
+                                <div class="tab-item" style="padding: 20px 0; color: #7f8c8d; cursor: pointer;">
+                                    Avis Clients (127)
+                                </div>
+                                <div class="tab-item" style="padding: 20px 0; color: #7f8c8d; cursor: pointer;">
+                                    Photos (18)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Deals -->
+                        <div style="padding: 30px 20px; max-width: 1200px; margin: 0 auto;">
+                            <div class="deals-grid">
+                                <div class="deal-card">
+                                    <div class="deal-image">
+                                        <i class="fas fa-utensils"></i>
+                                        <div class="deal-badge">-30%</div>
+                                    </div>
+                                    <div class="deal-content">
+                                        <div class="deal-title">Menu Découverte Complet</div>
+                                        <div class="deal-business">
+                                            <i class="fas fa-clock"></i>
+                                            Valable du lundi au vendredi
+                                        </div>
+                                        <div class="deal-price">
+                                            <span class="price-old">150 DH</span>
+                                            <span class="price-new">105 DH</span>
+                                        </div>
+                                        <div class="deal-footer">
+                                            <div class="deal-rating">
+                                                <i class="fas fa-star"></i>
+                                                <span>4.5 (23 avis)</span>
+                                            </div>
+                                            <div class="deal-expiry">Expire dans 5 jours</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="deal-card">
+                                    <div class="deal-image" style="background: linear-gradient(45deg, #27ae60, #2ecc71);">
+                                        <i class="fas fa-leaf"></i>
+                                        <div class="deal-badge">-20%</div>
+                                    </div>
+                                    <div class="deal-content">
+                                        <div class="deal-title">Menu Végétarien Premium</div>
+                                        <div class="deal-business">
+                                            <i class="fas fa-clock"></i>
+                                            Disponible tous les jours
+                                        </div>
+                                        <div class="deal-price">
+                                            <span class="price-old">120 DH</span>
+                                            <span class="price-new">96 DH</span>
+                                        </div>
+                                        <div class="deal-footer">
+                                            <div class="deal-rating">
+                                                <i class="fas fa-star"></i>
+                                                <span>4.3 (12 avis)</span>
+                                            </div>
+                                            <div class="deal-expiry">Expire dans 10 jours</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="deal-card">
+                                    <div class="deal-image" style="background: linear-gradient(45deg, #e67e22, #f39c12);">
+                                        <i class="fas fa-birthday-cake"></i>
+                                        <div class="deal-badge">-25%</div>
+                                    </div>
+                                    <div class="deal-content">
+                                        <div class="deal-title">Dîner d'Anniversaire</div>
+                                        <div class="deal-business">
+                                            <i class="fas fa-clock"></i>
+                                            Sur réservation uniquement
+                                        </div>
+                                        <div class="deal-price">
+                                            <span class="price-old">300 DH</span>
+                                            <span class="price-new">225 DH</span>
+                                        </div>
+                                        <div class="deal-footer">
+                                            <div class="deal-rating">
+                                                <i class="fas fa-star"></i>
+                                                <span>4.8 (7 avis)</span>
+                                            </div>
+                                            <div class="deal-expiry">Expire dans 21 jours</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Business Description -->
+                            <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 30px;">
+                                <h3 style="margin-bottom: 20px; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-info-circle"></i>
+                                    À propos de cet établissement
+                                </h3>
+                                <p style="line-height: 1.6; color: #7f8c8d; margin-bottom: 20px;">
+                                    Le Restaurant Le Savoureux vous accueille dans un cadre chaleureux et authentique pour découvrir les saveurs de la cuisine marocaine traditionnelle revisitée avec une touche moderne. Notre chef, formé dans les meilleures écoles culinaires, propose une carte variée qui saura satisfaire tous les palais.
+                                </p>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                                    <div>
+                                        <h4 style="color: #2c3e50; margin-bottom: 10px;">
+                                            <i class="fas fa-clock"></i> Horaires d'ouverture
+                                        </h4>
+                                        <p style="color: #7f8c8d; font-size: 14px;">
+                                            Lun-Dim: 12h00 - 23h00<br>
+                                            Service continu
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h4 style="color: #2c3e50; margin-bottom: 10px;">
+                                            <i class="fas fa-phone"></i> Contact
+                                        </h4>
+                                        <p style="color: #7f8c8d; font-size: 14px;">
+                                            +212 522 123 456<br>
+                                            contact@lesavoureux.ma
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h4 style="color: #2c3e50; margin-bottom: 10px;">
+                                            <i class="fas fa-utensils"></i> Spécialités
+                                        </h4>
+                                        <p style="color: #7f8c8d; font-size: 14px;">
+                                            Tajines, Couscous<br>
+                                            Grillades, Pâtisseries
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h4 style="color: #2c3e50; margin-bottom: 10px;">
+                                            <i class="fas fa-credit-card"></i> Paiement
+                                        </h4>
+                                        <p style="color: #7f8c8d; font-size: 14px;">
+                                            Espèces, Cartes bancaires<br>
+                                            Chèques restaurant
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Screen -->
+            <div id="login" class="mockup-screen">
+                <div class="screen-header">
+                    <h1><i class="fas fa-sign-in-alt"></i> Connexion</h1>
+                    <p>Accédez à votre compte DealsMap</p>
+                </div>
+                <div class="screen-content">
+                    <div class="form-container">
+                        <div style="text-align: center; margin-bottom: 40px;">
+                            <div class="logo" style="font-size: 32px; justify-content: center;">
+                                <i class="fas fa-map-marked-alt"></i>
+                                DealsMap
+                            </div>
+                            <p style="color: #7f8c8d; margin-top: 10px;">Connectez-vous pour découvrir les meilleurs deals</p>
+                        </div>
+
+                        <form style="max-width: 400px; margin: 0 auto;">
+                            <div class="form-group">
+                                <label class="form-label">Adresse email</label>
+                                <input type="email" class="form-input" placeholder="votre@email.com" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Mot de passe</label>
+                                <input type="password" class="form-input" placeholder="••••••••" required>
+                            </div>
+
+                            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox">
+                                    <span style="font-size: 14px;">Se souvenir de moi</span>
+                                </label>
+                                <a href="#" style="color: #3498db; text-decoration: none; font-size: 14px;">Mot de passe oublié ?</a>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; margin-bottom: 20px;">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Se connecter
+                            </button>
+
+                            <div style="text-align: center; margin: 20px 0;">
+                                <span style="color: #7f8c8d;">ou</span>
+                            </div>
+
+                            <button type="button" class="btn" style="width: 100%; padding: 15px; background: #4267B2; color: white; margin-bottom: 10px;">
+                                <i class="fab fa-facebook-f"></i>
+                                Continuer avec Facebook
+                            </button>
+
+                            <button type="button" class="btn" style="width: 100%; padding: 15px; background: #db4437; color: white;">
+                                <i class="fab fa-google"></i>
+                                Continuer avec Google
+                            </button>
+
+                            <div style="text-align: center; margin-top: 30px;">
+                                <span style="color: #7f8c8d;">Pas encore de compte ?</span>
+                                <a href="#" onclick="showScreen('register')" style="color: #3498db; text-decoration: none; font-weight: 500; margin-left: 5px;">
+                                    Créer un compte
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Register Screen -->
+            <div id="register" class="mockup-screen">
+                <div class="screen-header">
+                    <h1><i class="fas fa-user-plus"></i> Inscription</h1>
+                    <p>Créez votre compte pour accéder aux deals exclusifs</p>
+                </div>
+                <div class="screen-content">
+                    <div class="form-container">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <div class="logo" style="font-size: 28px; justify-content: center;">
+                                <i class="fas fa-map-marked-alt"></i>
+                                DealsMap
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 20px; margin-bottom: 30px; max-width: 400px; margin-left: auto; margin-right: auto;">
+                            <button type="button" class="btn" style="flex: 1; padding: 15px; background: #3498db; color: white; border-radius: 8px;">
+                                <i class="fas fa-user"></i>
+                                Utilisateur
+                            </button>
+                            <button type="button" class="btn" style="flex: 1; padding: 15px; background: transparent; color: #3498db; border: 2px solid #3498db; border-radius: 8px;" onclick="showScreen('business-register')">
+                                <i class="fas fa-store"></i>
+                                Propriétaire
+                            </button>
+                        </div>
+
+                        <form style="max-width: 400px; margin: 0 auto;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="form-group">
+                                    <label class="form-label">Prénom</label>
+                                    <input type="text" class="form-input" placeholder="Votre prénom" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nom</label>
+                                    <input type="text" class="form-input" placeholder="Votre nom" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Adresse email</label>
+                                <input type="email" class="form-input" placeholder="votre@email.com" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Numéro de téléphone</label>
+                                <input type="tel" class="form-input" placeholder="+212 6XX XXX XXX" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Mot de passe</label>
+                                <input type="password" class="form-input" placeholder="Minimum 8 caractères" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Confirmer le mot de passe</label>
+                                <input type="password" class="form-input" placeholder="Retapez votre mot de passe" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px; line-height: 1.4;">
+                                    <input type="checkbox" style="margin-top: 2px;" required>
+                                    <span>J'accepte les <a href="#" style="color: #3498db;">conditions d'utilisation</a> et la <a href="#" style="color: #3498db;">politique de confidentialité</a></span>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; margin-bottom: 20px;">
+                                <i class="fas fa-user-plus"></i>
+                                Créer mon compte
+                            </button>
+
+                            <div style="text-align: center;">
+                                <span style="color: #7f8c8d;">Déjà un compte ?</span>
+                                <a href="#" onclick="showScreen('login')" style="color: #3498db; text-decoration: none; font-weight: 500; margin-left: 5px;">
+                                    Se connecter
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Screen -->
+            <div id="dashboard" class="mockup-screen">
+                <div class="screen-header">
+                    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Propriétaire</h1>
+                    <p>Gérez vos établissements et suivez vos performances</p>
+                </div>
+                <div class="screen-content">
+                    <div class="app-header">
+                        <div class="logo">
+                            <i class="fas fa-map-marked-alt"></i>
+                            DealsMap Pro
+                        </div>
+                        <div class="header-nav">
+                            <a href="#" onclick="showScreen('dashboard')">Dashboard</a>
+                            <a href="#" onclick="showScreen('business-form')">Mes Établissements</a>
+                            <a href="#" onclick="showScreen('deal-form')">Mes Deals</a>
+                        </div>
+                        <div class="header-actions">
+                            <a href="#" class="btn btn-primary" onclick="showScreen('deal-form')">
+                                <i class="fas fa-plus"></i> Nouveau Deal
+                            </a>
+                            <a href="#" class="btn btn-secondary">
+                                <i class="fas fa-user"></i> Mon Profil
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon deals">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <div class="stat-number">12</div>
+                            <div class="stat-label">Deals Actifs</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon views">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="stat-number">1,247</div>
+                            <div class="stat-label">Vues ce mois</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon reviews">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="stat-number">4.6</div>
+                            <div class="stat-label">Note Moyenne</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon revenue">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-number">23%</div>
+                            <div class="stat-label">Croissance</div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="margin: 0; color: #2c3e50;">
+                                <i class="fas fa-tags"></i>
+                                Mes Deals Récents
+                            </h3>
+                            <a href="#" class="btn btn-primary" onclick="showScreen('deal-form')">
+                                <i class="fas fa-plus"></i> Nouveau Deal
+                            </a>
+                        </div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Deal</th>
+                                    <th>Établissement</th>
+                                    <th>Réduction</th>
+                                    <th>Vues</th>
+                                    <th>Statut</th>
+                                    <th>Expiration</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 40px; height: 40px; background: #3498db; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="fas fa-utensils"></i>
+                                            </div>
+                                            <span style="font-weight: 500;">Menu Découverte</span>
+                                        </div>
+                                    </td>
+                                    <td>Restaurant Le Savoureux</td>
+                                    <td><span style="color: #e74c3c; font-weight: bold;">-30%</span></td>
+                                    <td>342</td>
+                                    <td><span class="status-badge status-active">Actif</span></td>
+                                    <td>5 jours</td>
+                                    <td>
+                                        <div style="display: flex; gap: 5px;">
+                                            <button style="padding: 5px 10px; border: none; background: #3498db; color: white; border-radius: 4px; cursor: pointer;">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button style="padding: 5px 10px; border: none; background: #e74c3c; color: white; border-radius: 4px; cursor: pointer;">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 40px; height: 40px; background: #27ae60; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="fas fa-leaf"></i>
+                                            </div>
+                                            <span style="font-weight: 500;">Menu Végétarien</span>
+                                        </div>
+                                    </td>
+                                    <td>Restaurant Le Savoureux</td>
+                                    <td><span style="color: #e74c3c; font-weight: bold;">-20%</span></td>
+                                    <td>156</td>
+                                    <td><span class="status-badge status-active">Actif</span></td>
+                                    <td>10 jours</td>
+                                    <td>
+                                        <div style="display: flex; gap: 5px;">
+                                            <button style="padding: 5px 10px; border: none; background: #3498db; color: white; border-radius: 4px; cursor: pointer;">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button style="padding: 5px 10px; border: none; background: #e74c3c; color: white; border-radius: 4px; cursor: pointer;">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 40px; height: 40px; background: #7f8c8d; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="fas fa-birthday-cake"></i>
+                                            </div>
+                                            <span style="font-weight: 500;">Brunch Weekend</span>
+                                        </div>
+                                    </td>
+                                    <td>Restaurant Le Savoureux</td>
+                                    <td><span style="color: #e74c3c; font-weight: bold;">-15%</span></td>
+                                    <td>89</td>
+                                    <td><span class="status-badge status-expired">Expiré</span></td>
+                                    <td>-2 jours</td>
+                                    <td>
+                                        <div style="display: flex; gap: 5px;">
+                                            <button style="padding: 5px 10px; border: none; background: #95a5a6; color: white; border-radius: 4px; cursor: pointer;">
+                                                <i class="fas fa-redo"></i>
+                                            </button>
+                                            <button style="padding: 5px 10px; border: none; background: #e74c3c; color: white; border-radius: 4px; cursor: pointer;">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px;">
+                        <!-- Recent Reviews -->
+                        <div class="table-container">
+                            <div style="padding: 20px; border-bottom: 1px solid #eee;">
+                                <h3 style="margin: 0; color: #2c3e50;">
+                                    <i class="fas fa-star"></i>
+                                    Avis Récents
+                                </h3>
+                            </div>
+                            <div style="padding: 20px;">
+                                <div style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <strong>Sarah M.</strong>
+                                        <div style="color: #f39c12;">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                        </div>
+                                    </div>
+                                    <p style="color: #7f8c8d; font-size: 14px; margin: 0;">Excellent menu découverte ! Service impeccable et cadre très agréable.</p>
+                                </div>
+                                <div style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <strong>Ahmed K.</strong>
+                                        <div style="color: #f39c12;">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="far fa-star"></i>
+                                        </div>
+                                    </div>
+                                    <p style="color: #7f8c8d; font-size: 14px; margin: 0;">Très bon rapport qualité-prix avec le deal. Je recommande vivement !</p>
+                                </div>
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <strong>Fatima L.</strong>
+                                        <div style="color: #f39c12;">
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                            <i class="fas fa-star"></i>
+                                        </div>
+                                    </div>
+                                    <p style="color: #7f8c8d; font-size: 14px; margin: 0;">Cuisine authentique et accueil chaleureux. Une belle découverte !</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="table-container">
+                            <div style="padding: 20px; border-bottom: 1px solid #eee;">
+                                <h3 style="margin: 0; color: #2c3e50;">
+                                    <i class="fas fa-bolt"></i>
+                                    Actions Rapides
+                                </h3>
+                            </div>
+                            <div style="padding: 20px;">
+                                <div style="display: flex; flex-direction: column; gap: 15px;">
+                                    <button class="btn btn-primary" onclick="showScreen('deal-form')" style="justify-content: flex-start; padding: 15px;">
+                                        <i class="fas fa-plus-circle"></i>
+                                        Créer un nouveau deal
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="showScreen('business-form')" style="justify-content: flex-start; padding: 15px;">
+                                        <i class="fas fa-edit"></i>
+                                        Modifier mon établissement
+                                    </button>
+                                    <button class="btn" style="justify-content: flex-start; padding: 15px; background: #f39c12; color: white;">
+                                        <i class="fas fa-chart-bar"></i>
+                                        Voir les statistiques détaillées
+                                    </button>
+                                    <button class="btn" style="justify-content: flex-start; padding: 15px; background: #27ae60; color: white;">
+                                        <i class="fas fa-users"></i>
+                                        Gérer les avis clients
+                                    </button>
+                                    <button class="btn" style="justify-content: flex-start; padding: 15px; background: #8e44ad; color: white;">
+                                        <i class="fas fa-camera"></i>
+                                        Ajouter des photos
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Form Screen -->
+            <div id="business-form" class="mockup-screen">
+                <div class="screen-header">
+                    <h1><i class="fas fa-plus-circle"></i> Ajouter un Établissement</h1>
+                    <p>Créez votre profil d'établissement pour commencer à publier des deals</p>
+                </div>
+                <div class="screen-content">
+                    <div class="app-header">
+                        <div class="logo">
+                            <i class="fas fa-map-marked-alt"></i>
+                            DealsMap Pro
+                        </div>
+                        <div class="header-nav">
+                            <a href="#" onclick="showScreen('dashboard')">Dashboard</a>
+                            <a href="#" onclick="showScreen('business-form')">Mes Établissements</a>
+                            <a href="#" onclick="showScreen('deal-form')">Mes Deals</a>
+                        </div>
+                        <div class="header-actions">
+                            <a href="#" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Retour
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="form-container" style="max-width: 800px;">
+                        <form>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                                <h3 style="margin-bottom: 10px; color: #2c3e50;">
+                                    <i class="fas fa-info-circle"></i>
+                                    Informations de base
+                                </h3>
+                                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">
+                                    Ces informations seront visibles par tous les utilisateurs sur la plateforme.
+                                </p>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label">Nom de l'établissement *</label>
+                                    <input type="text" class="form-input" placeholder="Ex: Restaurant Le Savoureux" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Catégorie *</label>
+                                    <select class="form-select" required>
+                                        <option value="">Sélectionner une catégorie</option>
+                                        <option value="restaurant">🍽️ Restaurant</option>
+                                        <option value="patisserie">🧁 Pâtisserie</option>
+                                        <option value="gaming">🎮 Centre de jeux</option>
+                                        <option value="spa">🧘 Spa & Bien-être</option>
+                                        <option value="fitness">💪 Fitness & Sport</option>
+                                        <option value="beauty">💄 Beauté & Soins</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Description *</label>
+                                <textarea class="form-input form-textarea" placeholder="Décrivez votre établissement, vos spécialités, votre ambiance..." required></textarea>
+                            </div>
+
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                                <h3 style="margin-bottom: 10px; color: #2c3e50;">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Localisation
+                                </h3>
+                                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">
+                                    Indiquez l'adresse précise pour que vos clients puissent vous trouver facilement.
+                                </p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Adresse complète *</label>
+                                <input type="text" class="form-input" placeholder="123 Boulevard Mohammed V, Casablanca" required>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label">Ville *</label>
+                                    <input type="text" class="form-input" placeholder="Casablanca" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Code postal</label>
+                                    <input type="text" class="form-input" placeholder="20000">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Quartier</label>
+                                    <input type="text" class="form-input" placeholder="Maarif">
+                                </div>
+                            </div>
+
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                                <h3 style="margin-bottom: 10px; color: #2c3e50;">
+                                    <i class="fas fa-phone"></i>
+                                    Contact
+                                </h3>
+                                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">
+                                    Informations de contact pour que vos clients puissent vous joindre.
+                                </p>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label">Téléphone *</label>
+                                    <input type="tel" class="form-input" placeholder="+212 522 123 456" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-input" placeholder="contact@restaurant.ma">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Site web</label>
+                                <input type="url" class="form-input" placeholder="https://www.monrestaurant.ma">
+                            </div>
+
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                                <h3 style="margin-bottom: 10px; color: #2c3e50;">
+                                    <i class="fas fa-clock"></i>
+                                    Horaires d'ouverture
+                                </h3>
+                                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">
+                                    Indiquez vos horaires pour chaque jour de la semaine.
+                                </p>
+                            </div>
+
+                            <div style="display: grid; gap: 15px;">
+                                <div style="display: grid; grid-template-columns: 100px 1fr 1fr 60px; gap: 15px; align-items: center;">
+                                    <strong>Jour</strong>
+                                    <strong>Ouverture</strong>
+                                    <strong>Fermeture</strong>
+                                    <strong>Fermé</strong>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 100px 1fr 1fr 60px; gap: 15px; align-items: center;">
+                                    <span>Lundi</span>
+                                    <input type="time" class="form-input" value="12:00">
+                                    <input type="time" class="form-input" value="23:00">
+                                    <input type="checkbox">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 100px 1fr 1fr 60px; gap: 15px; align-items: center;">
+                                    <span>Mardi</span>
+                                    <input type="time" class="form-input" value="12:00">
+                                    <input type="time" class="form-input" value="23:00">
+                                    <input type="checkbox">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 100px 1fr 1fr 60px; gap: 15px; align-items: center;">
+                                    <span>Mercredi</span>
+                                    <input type="time" class="form-input" value="12:00">
+                                    <input type="time" class="form-input" value="23:00">
+                                    <input type="checkbox">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 100px 1fr 1fr 60px; gap: 15px; align-items: center;">
+                                    <span>Jeudi</span>
+                                    <input type="time" class="form-input" value="12:00">
+                                    <input type="time" class="form-input" value="23:00">
+                                    <input type="checkbox">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 100px 1fr 1fr 60px; gap: 15px; align-items: center;">
+                                    <span>Vendredi</span>
+                                    <input type="time" class="form-input" value="12:00">
+                                    <input type="time" class="form-input" value="23:00">
+                                    <input type="checkbox">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 100px 1fr 1fr 60px; gap: 15px; align-items: center;">
+                                    <span>Samedi</span>
+                                    <input type="time" class="form-input" value="12:00">
+                                    <input type="time" class="form-input" value="23:00">
+                                    <input type="checkbox">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 100px 1fr 1fr 60px; gap: 15px; align-items: center;">
+                                    <span>Dimanche</span>
+                                    <input type="time" class="form-input" value="12:00">
+                                    <input type="time" class="form-input" value="23:00">
+                                    <input type="checkbox">
+                                </div>
+                            </div>
+
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                                <h3 style="margin-bottom: 10px; color: #2c3e50;">
+                                    <i class="fas fa-image"></i>
+                                    Images
+                                </h3>
+                                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">
+                                    Ajoutez des photos de votre établissement pour attirer plus de clients.
+                                </p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Photo principale *</label>
+                                <div style="border: 2px dashed #ddd; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s ease;">
+                                    <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: #7f8c8d; margin-bottom: 10px;"></i>
+                                    <p style="color: #7f8c8d; margin: 0;">Cliquez pour sélectionner ou glissez-déposez votre image</p>
+                                    <p style="color: #bdc3c7; font-size: 12px; margin: 5px 0 0 0;">JPG, PNG (max 3MB)</p>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 40px;">
+                                <button type="button" class="btn btn-secondary" style="padding: 15px 30px;">
+                                    <i class="fas fa-eye"></i>
+                                    Aperçu
+                                </button>
+                                <button type="button" class="btn" style="padding: 15px 30px; background: #f39c12; color: white;">
+                                    <i class="fas fa-save"></i>
+                                    Sauvegarder brouillon
+                                </button>
+                                <button type="submit" class="btn btn-primary" style="padding: 15px 30px;">
+                                    <i class="fas fa-rocket"></i>
+                                    Publier le deal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Screen -->
+            <div id="profile" class="mockup-screen">
+                <div class="screen-header">
+                    <h1><i class="fas fa-user"></i> Mon Profil</h1>
+                    <p>Gérez vos informations personnelles et préférences</p>
+                </div>
+                <div class="screen-content">
+                    <div class="app-header">
+                        <div class="logo">
+                            <i class="fas fa-map-marked-alt"></i>
+                            DealsMap
+                        </div>
+                        <div class="header-nav">
+                            <a href="#" onclick="showScreen('home')">Accueil</a>
+                            <a href="#" onclick="showScreen('map')">Carte</a>
+                            <a href="#" onclick="showScreen('deals')">Deals</a>
+                        </div>
+                        <div class="header-actions">
+                            <a href="#" class="btn btn-secondary">
+                                <i class="fas fa-sign-out-alt"></i> Déconnexion
+                            </a>
+                        </div>
+                    </div>
+
+                    <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+                        <div style="display: grid; grid-template-columns: 300px 1fr; gap: 30px;">
+                            <!-- Profile Sidebar -->
+                            <div>
+                                <div style="background: white; border-radius: 12px; padding: 30px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 36px;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <h3 style="margin-bottom: 5px; color: #2c3e50;">Sarah Martinez</h3>
+                                    <p style="color: #7f8c8d; margin-bottom: 20px;">Membre depuis Mars 2024</p>
+                                    <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 20px; font-weight: bold; color: #3498db;">23</div>
+                                            <div style="font-size: 12px; color: #7f8c8d;">Deals utilisés</div>
+                                        </div>
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 20px; font-weight: bold; color: #27ae60;">15</div>
+                                            <div style="font-size: 12px; color: #7f8c8d;">Avis laissés</div>
+                                        </div>
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 20px; font-weight: bold; color: #f39c12;">1,250</div>
+                                            <div style="font-size: 12px; color: #7f8c8d;">DH économisés</div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" style="width: 100%;">
+                                        <i class="fas fa-edit"></i> Modifier photo
+                                    </button>
+                                </div>
+
+                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                                    <h4 style="margin-bottom: 15px; color: #2c3e50;">
+                                        <i class="fas fa-heart"></i> Mes Favoris
+                                    </h4>
+                                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #eee; border-radius: 8px;">
+                                            <div style="width: 30px; height: 30px; background: #3498db; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">
+                                                <i class="fas fa-utensils"></i>
+                                            </div>
+                                            <div style="flex: 1;">
+                                                <div style="font-size: 14px; font-weight: 500;">Le Savoureux</div>
+                                                <div style="font-size: 12px; color: #7f8c8d;">Restaurant</div>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #eee; border-radius: 8px;">
+                                            <div style="width: 30px; height: 30px; background: #e74c3c; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">
+                                                <i class="fas fa-gamepad"></i>
+                                            </div>
+                                            <div style="flex: 1;">
+                                                <div style="font-size: 14px; font-weight: 500;">GameZone</div>
+                                                <div style="font-size: 12px; color: #7f8c8d;">Gaming Center</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Profile Content -->
+                            <div>
+                                <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                                    <h3 style="margin-bottom: 20px; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                                        <i class="fas fa-user-edit"></i>
+                                        Informations personnelles
+                                    </h3>
+                                    
+                                    <form>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                            <div class="form-group">
+                                                <label class="form-label">Prénom</label>
+                                                <input type="text" class="form-input" value="Sarah">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Nom</label>
+                                                <input type="text" class="form-input" value="Martinez">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Adresse email</label>
+                                            <input type="email" class="form-input" value="sarah.martinez@email.com">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Téléphone</label>
+                                            <input type="tel" class="form-input" value="+212 6XX XXX XXX">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Adresse</label>
+                                            <input type="text" class="form-input" value="Rue de la Paix, Casablanca">
+                                        </div>
+
+                                        <div style="display: flex; gap: 15px; justify-content: flex-end;">
+                                            <button type="button" class="btn btn-secondary">
+                                                <i class="fas fa-times"></i> Annuler
+                                            </button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Sauvegarder
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                                    <h3 style="margin-bottom: 20px; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                                        <i class="fas fa-bell"></i>
+                                        Préférences de notification
+                                    </h3>
+                                    
+                                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                            <input type="checkbox" checked>
+                                            <span>Nouveaux deals près de chez moi</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                            <input type="checkbox" checked>
+                                            <span>Deals sur mes établissements favoris</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                            <input type="checkbox">
+                                            <span>Newsletter hebdomadaire</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                            <input type="checkbox" checked>
+                                            <span>Rappels d'expiration de deals</span>
+                                        </label>
+                                    </div>
+
+                                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                                        <h4 style="margin-bottom: 15px; color: #2c3e50;">Catégories préférées</h4>
+                                        <div style="display: flex; flex-wrap: gap; gap: 10px;">
+                                            <span style="background: #3498db; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px;">🍽️ Restaurants</span>
+                                            <span style="background: #e74c3c; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px;">🎮 Gaming</span>
+                                            <span style="background: #f39c12; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px;">🧘 Spa</span>
+                                            <span style="background: #95a5a6; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; cursor: pointer;">+ Ajouter</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                                    <h3 style="margin-bottom: 20px; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                                        <i class="fas fa-history"></i>
+                                        Historique récent
+                                    </h3>
+                                    
+                                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                                        <div style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid #eee; border-radius: 8px;">
+                                            <div style="width: 50px; height: 50px; background: #3498db; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="fas fa-utensils"></i>
+                                            </div>
+                                            <div style="flex: 1;">
+                                                <div style="font-weight: 500; margin-bottom: 5px;">Menu Découverte utilisé</div>
+                                                <div style="font-size: 14px; color: #7f8c8d;">Restaurant Le Savoureux • Il y a 2 jours</div>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <div style="color: #27ae60; font-weight: bold;">-45 DH</div>
+                                                <div style="font-size: 12px; color: #7f8c8d;">Économisé</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid #eee; border-radius: 8px;">
+                                            <div style="width: 50px; height: 50px; background: #e74c3c; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="fas fa-gamepad"></i>
+                                            </div>
+                                            <div style="flex: 1;">
+                                                <div style="font-weight: 500; margin-bottom: 5px;">Session Gaming utilisée</div>
+                                                <div style="font-size: 14px; color: #7f8c8d;">GameZone Center • Il y a 1 semaine</div>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <div style="color: #27ae60; font-weight: bold;">-40 DH</div>
+                                                <div style="font-size: 12px; color: #7f8c8d;">Économisé</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScreen(screenId) {
+            // Hide all screens
+            const screens = document.querySelectorAll('.mockup-screen');
+            screens.forEach(screen => screen.classList.remove('active'));
+            
+            // Remove active from all nav items
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            
+            // Show selected screen
+            document.getElementById(screenId).classList.add('active');
+            
+            // Add active to clicked nav item
+            event.target.closest('.nav-item').classList.add('active');
+        }
+
+        function showBusinessPreview(businessName) {
+            alert(`Aperçu de ${businessName}\n\nDans l'application réelle, ceci ouvrirait une popup avec:\n- Photo de l'établissement\n- Deals actifs\n- Note et avis\n- Bouton "Voir détails"`);
+        }
+
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add hover effects to cards
+            const cards = document.querySelectorAll('.deal-card, .stat-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+
+            // Price calculation demo
+            const priceInputs = document.querySelectorAll('input[type="number"]');
+            priceInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    // Demo price calculation
+                    if (this.placeholder === "150") {
+                        const original = parseFloat(this.value) || 0;
+                        const dealPrice = original * 0.7; // 30% discount
+                        const nextInput = this.parentElement.nextElementSibling?.querySelector('input');
+                        if (nextInput) {
+                            nextInput.value = dealPrice.toFixed(0);
+                        }
+                    }
+                });
+            });
+
+            // Add some tooltips
+            const markers = document.querySelectorAll('.marker');
+            markers.forEach(marker => {
+                marker.addEventListener('mouseenter', function(e) {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'tooltip';
+                    tooltip.textContent = 'Cliquez pour voir les deals';
+                    tooltip.style.left = e.pageX + 'px';
+                    tooltip.style.top = (e.pageY - 40) + 'px';
+                    tooltip.style.opacity = '1';
+                    document.body.appendChild(tooltip);
+                    
+                    marker.tooltip = tooltip;
+                });
+                
+                marker.addEventListener('mouseleave', function() {
+                    if (marker.tooltip) {
+                        marker.tooltip.remove();
+                        marker.tooltip = null;
+                    }
+                });
+            });
+
+            // Demo notification for form submissions
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Show success message
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #27ae60;
+                        color: white;
+                        padding: 15px 20px;
+                        border-radius: 8px;
+                        z-index: 10000;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                        animation: slideIn 0.3s ease;
+                    `;
+                    notification.innerHTML = '<i class="fas fa-check"></i> Action réussie ! (Démo)';
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.animation = 'slideOut 0.3s ease';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 3000);
+                });
+            });
+        });
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); }
+                to { transform: translateX(0); }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); }
+                to { transform: translateX(100%); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>dc3c7; font-size: 12px; margin: 5px 0 0 0;">Format accepté: JPG, PNG (max 5MB)</p>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 40px;">
+                                <button type="button" class="btn btn-secondary" style="padding: 15px 30px;">
+                                    <i class="fas fa-times"></i>
+                                    Annuler
+                                </button>
+                                <button type="submit" class="btn btn-primary" style="padding: 15px 30px;">
+                                    <i class="fas fa-save"></i>
+                                    Enregistrer l'établissement
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deal Form Screen -->
+            <div id="deal-form" class="mockup-screen">
+                <div class="screen-header">
+                    <h1><i class="fas fa-percent"></i> Créer un Deal</h1>
+                    <p>Proposez une offre attractive à vos clients</p>
+                </div>
+                <div class="screen-content">
+                    <div class="app-header">
+                        <div class="logo">
+                            <i class="fas fa-map-marked-alt"></i>
+                            DealsMap Pro
+                        </div>
+                        <div class="header-nav">
+                            <a href="#" onclick="showScreen('dashboard')">Dashboard</a>
+                            <a href="#" onclick="showScreen('business-form')">Mes Établissements</a>
+                            <a href="#" onclick="showScreen('deal-form')">Mes Deals</a>
+                        </div>
+                        <div class="header-actions">
+                            <a href="#" class="btn btn-secondary" onclick="showScreen('dashboard')">
+                                <i class="fas fa-arrow-left"></i> Retour
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="form-container" style="max-width: 700px;">
+                        <form>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                                <h3 style="margin-bottom: 10px; color: #2c3e50;">
+                                    <i class="fas fa-info-circle"></i>
+                                    Informations du Deal
+                                </h3>
+                                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">
+                                    Créez une offre attrayante qui incitera vos clients à visiter votre établissement.
+                                </p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Établissement *</label>
+                                <select class="form-select" required>
+                                    <option value="">Sélectionner un établissement</option>
+                                    <option value="restaurant" selected>Restaurant Le Savoureux</option>
+                                    <option value="patisserie">Pâtisserie Délice (En attente de validation)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Titre du deal *</label>
+                                <input type="text" class="form-input" placeholder="Ex: Menu Découverte Complet" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Description détaillée *</label>
+                                <textarea class="form-input form-textarea" placeholder="Décrivez votre offre en détail : ce qui est inclus, les conditions, les restrictions..." required></textarea>
+                            </div>
+
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                                <h3 style="margin-bottom: 10px; color: #2c3e50;">
+                                    <i class="fas fa-euro-sign"></i>
+                                    Tarification
+                                </h3>
+                                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">
+                                    Définissez le prix original et le prix promotionnel de votre offre.
+                                </p>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label">Prix original (DH) *</label>
+                                    <input type="number" class="form-input" placeholder="150" required min="0" step="0.01">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Prix du deal (DH) *</label>
+                                    <input type="number" class="form-input" placeholder="105" required min="0" step="0.01">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Réduction calculée</label>
+                                    <div style="padding: 12px; background: #e8f5e8; border: 2px solid #27ae60; border-radius: 8px; color: #27ae60; font-weight: bold; text-align: center;">
+                                        -30%
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                                <h3 style="margin-bottom: 10px; color: #2c3e50;">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    Période de validité
+                                </h3>
+                                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">
+                                    Définissez la période pendant laquelle votre deal sera actif (maximum 4 semaines).
+                                </p>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label">Date de début *</label>
+                                    <input type="datetime-local" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date de fin *</label>
+                                    <input type="datetime-local" class="form-input" required>
+                                </div>
+                            </div>
+
+                            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <i class="fas fa-exclamation-triangle" style="color: #f39c12; margin-right: 8px;"></i>
+                                <strong>Attention:</strong> La durée maximale d'un deal est de 4 semaines (28 jours).
+                            </div>
+
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                                <h3 style="margin-bottom: 10px; color: #2c3e50;">
+                                    <i class="fas fa-cog"></i>
+                                    Options avancées
+                                </h3>
+                                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">
+                                    Paramètres additionnels pour votre deal.
+                                </p>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label">Nombre max d'utilisations</label>
+                                    <input type="number" class="form-input" placeholder="Illimité" min="1">
+                                    <small style="color: #7f8c8d; font-size: 12px;">Laissez vide pour un nombre illimité</small>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Jours de validité</label>
+                                    <select class="form-select">
+                                        <option value="all">Tous les jours</option>
+                                        <option value="weekdays">Lundi à Vendredi</option>
+                                        <option value="weekend">Weekend uniquement</option>
+                                        <option value="custom">Personnalisé</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Conditions particulières</label>
+                                <textarea class="form-input" style="min-height: 80px;" placeholder="Ex: Sur réservation uniquement, non cumulable avec d'autres offres..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Image du deal</label>
+                                <div style="border: 2px dashed #ddd; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer;">
+                                    <i class="fas fa-image" style="font-size: 24px; color: #7f8c8d; margin-bottom: 10px;"></i>
+                                    <p style="color: #7f8c8d; margin: 0;">Ajouter une image attractive pour votre deal</p>
+                                    <p style="color: #b
