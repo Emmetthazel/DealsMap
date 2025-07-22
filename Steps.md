@@ -75,36 +75,6 @@
 
 ---
 
-### 6. **Documentation technique**
-
-- Créer un dossier `docs/` ou un fichier `README.md`
-- Documenter :
-
-  - Les prérequis techniques
-  - Les commandes d’installation et de lancement
-  - L’architecture du projet (schéma, explications)
-  - Les accès à la base de données
-  - Les conventions de code
-
----
-
-### 7. **Partage et validation des mockups**
-
-- Créer ou récupérer les mockups (Figma, PDF, etc.)
-- Les partager avec le mentor pour validation
-- Les stocker dans le repo ou un dossier partagé
-
----
-
-### 8. **Formation rapide sur les technos (si besoin)**
-
-- Prendre 1-2 jours pour se former sur :
-
-  - Django REST Framework (tutos, docs)
-  - OpenLayers (tutos, exemples)
-  - PostGIS (bases de la géolocalisation)
-  - JWT Auth (concepts, exemples)
-
 ---
 
 ## 📝 Résumé des livrables Sprint 0
@@ -114,5 +84,3 @@
 - Backend Django avec apps de base
 - Frontend React initialisé
 - Base de données opérationnelle
-- Documentation technique
-- Mockups validés
