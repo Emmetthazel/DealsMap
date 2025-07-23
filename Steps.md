@@ -2,9 +2,9 @@
 
 ### 1. **Préparation de l’environnement de développement**
 
-- Installer Python 3.9+
-- Installer Node.js 18+ et npm
-- Installer PostgreSQL 14+ et l’extension PostGIS
+- Installer Python 3.13.2
+- Installer Node.js v20.18.0 et npm
+- Installer PostgreSQL 17.4 et l’extension PostGIS
 - Installer VS Code
 - Installer Git
 - Installer Postman et pgAdmin
@@ -16,7 +16,7 @@
 - Créer un nouveau dossier pour le projet (`MyDealsMap`)
 - Initialiser un dépôt Git (`git init`)
 - Créer un `.gitignore` adapté (Python, Node, etc.)
-- Créer un repository distant (GitHub, GitLab…) et le lier
+- Créer un repository distant (GitHub) et le lier
 
 ---
 
@@ -36,6 +36,8 @@
 - Installer Django, djangorestframework, psycopg2, django-cors-headers, etc.
 - Créer le projet Django (`django-admin startproject dealsmap`)
 - Créer les apps de base :
+
+  ###### apps/
 
   -`authentication` (gestion utilisateurs)
 
@@ -59,6 +61,8 @@
 - Initialiser le projet React (`npx create-react-app .`)
 - Installer les dépendances : OpenLayers, axios, tailwindcss, etc.
 - Organiser la structure des dossiers :
+
+  ###### src/
 
   -`components/`
 
