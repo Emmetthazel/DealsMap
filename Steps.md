@@ -72,15 +72,3 @@
 
   -`styles/`
 - Lancer l’app React pour vérifier que tout fonctionne
-
----
-
----
-
-## 📝 Résumé des livrables Sprint 0
-
-- Environnement prêt (Python, Node, PostgreSQL/PostGIS, outils)
-- Repo Git initialisé et structuré
-- Backend Django avec apps de base
-- Frontend React initialisé
-- Base de données opérationnelle
