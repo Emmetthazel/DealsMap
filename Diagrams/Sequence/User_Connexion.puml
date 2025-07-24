@@ -1,0 +1,19 @@
+@startuml
+actor Utilisateur
+participant Frontend
+participant Backend
+participant DB
+
+Utilisateur -> Frontend : Entrer email + mot de passe
+Frontend -> Backend : POST /api/login
+Backend -> DB : Vérifier identifiants
+DB --> Backend : Résultat
+
+alt Identifiants incorrects
+  Backend -> Frontend : Erreur
+else
+  Backend -> Frontend : JWT + Infos utilisateur
+end
+
+Frontend -> Utilisateur : Rediriger vers accueil
+@enduml

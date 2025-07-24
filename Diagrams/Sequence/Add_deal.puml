@@ -1,0 +1,13 @@
+@startuml
+actor Proprietaire
+participant Frontend
+participant Backend
+participant DB
+
+Proprietaire -> Frontend : Créer nouveau deal
+Frontend -> Backend : POST /api/deals
+Backend -> DB : Enregistrer deal
+DB --> Backend : Succès
+Backend -> Frontend : Confirmation
+Frontend -> Proprietaire : Afficher deal dans la liste
+@enduml

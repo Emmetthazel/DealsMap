@@ -1,0 +1,20 @@
+@startuml
+actor Utilisateur
+participant "Frontend (React)" as Frontend
+participant "Backend (Django)" as Backend
+participant "Base de Données" as DB
+
+Utilisateur -> Frontend : Remplir formulaire d'inscription
+Frontend -> Backend : POST /api/signup
+Backend -> DB : Vérifier si email existe
+DB --> Backend : Résultat
+
+alt Email déjà utilisé
+  Backend -> Frontend : Erreur "Email déjà utilisé"
+else
+  Backend -> DB : Enregistrer utilisateur
+  DB --> Backend : Succès
+  Backend -> Frontend : Message de confirmation
+end
+Frontend -> Utilisateur : Afficher résultat
+@enduml

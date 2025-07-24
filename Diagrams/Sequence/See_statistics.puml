@@ -1,0 +1,17 @@
+@startuml
+actor Admin
+actor Proprietaire
+participant Frontend
+participant Backend
+participant DB
+
+Admin -> Frontend : Ouvrir dashboard
+Proprietaire -> Frontend : Ouvrir dashboard
+
+Frontend -> Backend : GET /api/stats
+Backend -> DB : Calculer stats (avis, deals, visites...)
+DB --> Backend : Données statistiques
+Backend --> Frontend : JSON
+Frontend -> Admin : Afficher stats globales
+Frontend -> Proprietaire : Afficher stats perso
+@enduml

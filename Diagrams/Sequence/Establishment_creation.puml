@@ -1,0 +1,14 @@
+@startuml
+actor Proprietaire
+participant Frontend
+participant Backend
+participant DB
+participant Admin
+
+Proprietaire -> Frontend : Remplir formulaire établissement
+Frontend -> Backend : POST /api/etablissements
+Backend -> DB : Enregistrer établissement (état = "en attente")
+DB --> Backend : OK
+Backend -> Admin : Notification "Nouvel établissement à valider"
+Backend -> Frontend : Message "En attente de validation"
+@enduml

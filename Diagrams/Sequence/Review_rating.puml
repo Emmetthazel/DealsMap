@@ -1,0 +1,13 @@
+@startuml
+actor Utilisateur
+participant Frontend
+participant Backend
+participant DB
+
+Utilisateur -> Frontend : Rédiger avis + note
+Frontend -> Backend : POST /api/etablissements/{id}/avis
+Backend -> DB : Enregistrer avis + note
+DB --> Backend : Succès
+Backend -> Frontend : Confirmation
+Frontend -> Utilisateur : Afficher avis ajouté
+@enduml

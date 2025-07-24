@@ -1,0 +1,19 @@
+@startuml
+actor Admin
+participant InterfaceAdmin
+participant Backend
+participant DB
+
+Admin -> InterfaceAdmin : Consulter avis signalés
+InterfaceAdmin -> Backend : GET /api/avis?status=signalé
+Backend -> DB : Rechercher avis signalés
+DB --> Backend : Liste avis
+Backend --> InterfaceAdmin : Résultat
+InterfaceAdmin -> Admin : Afficher avis
+
+Admin -> InterfaceAdmin : Supprimer ou approuver
+InterfaceAdmin -> Backend : DELETE ou PUT /api/avis/{id}
+Backend -> DB : Appliquer action
+DB --> Backend : OK
+Backend -> InterfaceAdmin : Confirmation
+@enduml

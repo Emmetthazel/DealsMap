@@ -1,0 +1,14 @@
+@startuml
+actor Utilisateur
+participant Frontend
+participant Backend
+participant DB
+
+Utilisateur -> Frontend : Cliquer sur un établissement
+Frontend -> Backend : GET /api/etablissements/{id}
+Backend -> DB : Récupérer infos + deals + avis
+DB --> Backend : Données établissement
+Backend --> Frontend : JSON (infos + deals + avis)
+Frontend -> Utilisateur : Afficher détails
+
+@enduml

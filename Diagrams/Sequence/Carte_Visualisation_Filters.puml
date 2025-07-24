@@ -1,0 +1,20 @@
+@startuml
+actor Utilisateur
+participant Frontend
+participant Backend
+participant DB
+
+Utilisateur -> Frontend : Accéder à la carte
+Frontend -> Backend : GET /api/etablissements
+Backend -> DB : Récupérer établissements
+DB --> Backend : Liste établissements
+Backend --> Frontend : Données JSON
+Frontend -> Utilisateur : Afficher carte + marqueurs
+
+Utilisateur -> Frontend : Sélectionner filtre
+Frontend -> Backend : GET /api/etablissements?categorie=X
+Backend -> DB : Appliquer filtre
+DB --> Backend : Résultats filtrés
+Backend --> Frontend : Résultats JSON
+Frontend -> Utilisateur : Mettre à jour carte
+@enduml

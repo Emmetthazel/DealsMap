@@ -1,0 +1,19 @@
+@startuml
+actor Admin
+participant InterfaceAdmin
+participant Backend
+participant DB
+
+Admin -> InterfaceAdmin : Voir liste des établissements en attente
+InterfaceAdmin -> Backend : GET /api/etablissements?etat=attente
+Backend -> DB : Requête établissements "en attente"
+DB --> Backend : Résultats
+Backend --> InterfaceAdmin : JSON
+InterfaceAdmin -> Admin : Afficher liste
+
+Admin -> InterfaceAdmin : Valider établissement
+InterfaceAdmin -> Backend : PUT /api/etablissements/{id}/valider
+Backend -> DB : Changer état → "validé"
+DB --> Backend : OK
+Backend -> InterfaceAdmin : Succès
+@enduml
