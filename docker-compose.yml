@@ -38,6 +38,25 @@ services:
       - DB_PORT=5432
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+  
+  celery:
+    build: ./DealsMap
+    command: celery -A dealsmap worker -l info
+    volumes:
+      - ./DealsMap:/code
+    depends_on:
+      - redis
+      - db
+    environment:
+      - DEBUG=1
+      - DB_NAME=dealsmap
+      - DB_USER=deals_user
+      - DB_PASSWORD=UnMotDePasseSolide123!
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DJANGO_SETTINGS_MODULE=dealsmap.settings
 
 volumes:
   pgdata:
