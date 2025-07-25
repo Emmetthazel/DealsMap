@@ -1,0 +1,83 @@
+@startuml Processus d'authentification utilisateur - DealsMap
+!theme plain
+title Processus d'authentification utilisateur - DealsMap
+
+start
+
+:Utilisateur accède à la plateforme;
+
+if (Utilisateur déjà connecté?) then (oui)
+  :Redirection vers dashboard;
+  stop
+else (non)
+  :Affichage page d'authentification;
+endif
+
+:Utilisateur choisit action;
+
+if (Action choisie?) then (Inscription)
+  :Saisie informations inscription;
+  note right
+    - Email/Mot de passe
+    - Type utilisateur (Client/Propriétaire)
+    - Téléphone (optionnel)
+  end note
+  
+  :Validation côté client;
+  
+  if (Données valides?) then (non)
+    :Affichage erreurs validation;
+    :Retour saisie;
+  else (oui)
+    :Envoi API POST /register;
+    
+    if (Email déjà existant?) then (oui)
+      :Retour erreur "Email déjà utilisé";
+      :Retour saisie;
+    else (non)
+      :Création utilisateur en base;
+      :Génération tokens JWT;
+      :Retour tokens (access + refresh);
+      :Stockage tokens côté client;
+      :Redirection selon type utilisateur;
+      
+      if (Type utilisateur?) then (Propriétaire)
+        :Redirection dashboard propriétaire;
+      else (Client)
+        :Redirection page découverte deals;
+      endif
+    endif
+  endif
+
+else (Connexion)
+  :Saisie email/mot de passe;
+  
+  :Validation côté client;
+  
+  if (Données valides?) then (non)
+    :Affichage erreurs validation;
+    :Retour saisie;
+  else (oui)
+    :Envoi API POST /login;
+    
+    if (Credentials valides?) then (non)
+      :Retour erreur "Identifiants incorrects";
+      :Retour saisie;
+    else (oui)
+      :Génération nouveaux tokens JWT;
+      :Retour tokens (access + refresh);
+      :Stockage tokens côté client;
+      :Redirection selon type utilisateur;
+      
+      if (Type utilisateur?) then (Propriétaire)
+        :Redirection dashboard propriétaire;
+      else (Client)
+        :Redirection page découverte deals;
+      endif
+    endif
+  endif
+endif
+
+stop
+
+@enduml

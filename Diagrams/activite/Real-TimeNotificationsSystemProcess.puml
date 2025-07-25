@@ -1,0 +1,139 @@
+@startuml Processus système de notifications temps réel - DealsMap
+!theme plain
+title Processus système de notifications temps réel - DealsMap
+
+partition "Système" {
+  start
+  :Événement déclencheur détecté;
+
+  if ("Type d'événement?") then ("Nouveau deal créé")
+    partition "Deal Creation Service" {
+      :Deal créé par propriétaire;
+      :Récupération coordonnées établissement;
+    }
+    partition "Notification Service" {
+      :Identification utilisateurs proximité;
+      note right
+        SELECT u.id, u.user_preferences
+        FROM users u
+        JOIN user_locations ul ON u.id = ul.user_id
+        WHERE ST_DWithin(
+          ul.location,
+          business.location,
+          u.notification_radius * 1000
+        )
+        AND u.notifications_enabled = true
+        AND u.categories_preferences CONTAINS deal.category
+      end note
+      :Filtrage selon préférences utilisateur;
+      :Création notifications individuelles;
+    }
+
+  elseif ("Deal expirant bientôt")
+    partition "Scheduled Task (Celery)" {
+      :Tâche quotidienne identification deals;
+      note right
+        SELECT * FROM deals
+        WHERE end_date BETWEEN now()
+        AND now() + interval '24 hours'
+        AND is_active = true
+      end note
+      :Récupération utilisateurs avec deals favoris;
+      :Création notifications expiration;
+    }
+
+  elseif ("Nouvel avis reçu")
+    partition "Review Service" {
+      :Avis approuvé automatiquement/manuellement;
+      :Identification propriétaire établissement;
+      :Création notification propriétaire;
+    }
+
+  elseif ("Réponse propriétaire")
+    partition "Business Owner Action" {
+      :Propriétaire répond à un avis;
+      :Identification auteur avis original;
+      :Création notification utilisateur;
+    }
+
+  elseif ("Seuil alerte dépassé")
+    partition "Analytics Service" {
+      :Détection anomalie métriques;
+      :Vérification seuils personnalisés;
+      :Création alerte propriétaire;
+    }
+  endif
+
+  :Notification créée en base;
+  note right
+    Modèle Notification:
+    - user_id (destinataire)
+    - type (deal_nearby, expiring, review, etc.)
+    - title, message
+    - data (JSON métadonnées)
+    - is_read, created_at
+  end note
+  :Détermination canaux diffusion;
+}
+
+partition "Canal WebSocket" {
+  if ("Utilisateur connecté?") then ("oui")
+    partition "WebSocket Service" {
+      :Envoi via Django Channels;
+      :Connexion WebSocket active;
+    }
+    partition "Frontend Client" {
+      :Réception notification temps réel;
+      :Affichage toast/popup;
+      :Mise à jour compteur notifications;
+      :Ajout à liste notifications;
+    }
+  endif
+}
+
+partition "Canal Push Browser" {
+  if ("Push notifications activées?") then ("oui")
+    partition "Push Service" {
+      :Envoi via Service Worker;
+      :Utilisation Push API navigateur;
+    }
+    partition "Browser" {
+      :Affichage notification système;
+      :Possibilité clic pour action;
+    }
+  endif
+}
+
+partition "Canal Email" {
+  if ("Notifications email activées?") then ("oui")
+    partition "Email Service (Celery)" {
+      :Mise en queue email;
+      :Template selon type notification;
+      :Envoi via SMTP;
+
+      if ("Digest hebdomadaire?") then ("oui")
+        :Groupement notifications;
+        :Envoi email récapitulatif;
+      else
+        :Envoi email immédiat;
+      endif
+    }
+  endif
+}
+
+partition "Canal SMS (Premium)" {
+  if ("SMS activé ET événement critique?") then ("oui")
+    partition "SMS Service" {
+      :Envoi via API SMS;
+      :Facturation si nécessaire;
+    }
+  endif
+}
+
+partition "Base de données" {
+  :Marquer notification comme envoyée;
+  :Mise à jour statuts delivery;
+}
+
+stop
+@enduml

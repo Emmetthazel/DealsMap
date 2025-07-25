@@ -1,0 +1,104 @@
+@startuml Processus de création de deal promotionnel - DealsMap
+!theme plain
+title Processus de création de deal promotionnel - DealsMap
+
+|Propriétaire|
+start
+
+:Accès dashboard propriétaire;
+:Sélection établissement;
+
+if (Établissement vérifié?) then (non)
+  :Message "Établissement en attente de validation";
+  stop
+else (oui)
+  :Clic "Créer nouveau deal";
+endif
+
+:Affichage formulaire création deal;
+
+:Saisie informations deal;
+note right
+  - Titre du deal
+  - Description détaillée
+  - Prix original
+  - Prix promotionnel
+  - Image du deal (optionnelle)
+end note
+
+:Calcul automatique pourcentage réduction;
+note right
+  discount_percentage = 
+  ((original_price - deal_price) / original_price) * 100
+end note
+
+:Configuration période validité;
+
+if (Date fin > Date début + 4 semaines?) then (oui)
+  :Erreur "Durée maximale 4 semaines";
+  :Retour modification dates;
+else (non)
+  :Validation dates acceptées;
+endif
+
+:Configuration limites utilisation (optionnel);
+note right
+  - Nombre max d'utilisations
+  - Limitation par utilisateur
+  - Conditions spéciales
+end note
+
+:Upload image deal;
+
+if (Image fournie?) then (oui)
+  :Validation format/taille;
+  
+  if (Image valide?) then (non)
+    :Erreur validation image;
+    :Retour upload;
+  else (oui)
+    :Traitement et stockage image;
+  endif
+endif
+
+:Validation formulaire complet;
+
+if (Données valides?) then (non)
+  :Affichage erreurs;
+  :Retour correction;
+else (oui)
+  |API Backend|
+  :Réception POST /api/deals/;
+  :Validation permissions propriétaire;
+  :Validation règles métier;
+  
+  if (Prix deal >= Prix original?) then (oui)
+    :Erreur "Prix deal doit être < prix original";
+    |Propriétaire|
+    :Affichage erreur prix;
+    :Retour correction;
+  else (non)
+    :Création enregistrement Deal;
+    :Liaison avec Business;
+    :Calcul et stockage discount_percentage;
+    :Statut initial: is_active=true;
+    :Initialisation current_uses=0;
+    :Retour réponse succès + ID deal;
+    
+    |Propriétaire|
+    :Redirection dashboard deals;
+    :Affichage message succès;
+    
+    |Système de notification|
+    :Identification utilisateurs proximité;
+    :Envoi notifications "Nouveau deal nearby";
+    
+    |Analytics|
+    :Création entrée DealAnalytics;
+    :Initialisation compteurs à zéro;
+  endif
+endif
+
+stop
+
+@enduml

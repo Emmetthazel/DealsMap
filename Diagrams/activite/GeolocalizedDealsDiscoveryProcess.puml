@@ -1,0 +1,121 @@
+@startuml Processus de découverte de deals géolocalisés - DealsMap
+!theme plain
+title Processus de découverte de deals géolocalisés - DealsMap
+
+|Client|
+start
+
+:Accès page découverte deals;
+
+:Demande géolocalisation utilisateur;
+
+if (Géolocalisation autorisée?) then (non)
+  :Utilisation localisation par défaut;
+  note right
+    Coordonnées centre-ville
+    ou dernière position connue
+  end note
+else (oui)
+  :Récupération coordonnées GPS;
+  :Stockage position utilisateur;
+endif
+
+:Chargement carte interactive;
+
+|API Backend|
+:Appel GET /api/businesses/nearby/;
+note right
+  Paramètres:
+  - lat, lng (coordonnées)
+  - radius (rayon en km, défaut: 5km)
+  - category (optionnel)
+  - has_deals=true
+end note
+
+:Requête PostGIS géospatiale;
+note right
+  SELECT b.*, d.* 
+  FROM businesses b
+  JOIN deals d ON b.id = d.business_id
+  WHERE ST_DWithin(
+    b.location, 
+    ST_MakePoint(lng, lat)::geography, 
+    radius * 1000
+  )
+  AND d.is_active = true
+  AND d.end_date > now()
+  AND b.is_verified = true
+end note
+
+:Retour businesses avec deals actifs;
+
+|Client|
+:Affichage marqueurs sur carte;
+
+if (Nombreux marqueurs proches?) then (oui)
+  :Activation clustering automatique;
+  :Affichage clusters avec compteur;
+else (non)
+  :Affichage marqueurs individuels;
+endif
+
+:Application des filtres par défaut;
+
+repeat
+  :Utilisateur navigue carte;
+  
+  if (Clic sur marqueur/cluster?) then (marqueur)
+    :Affichage popup informations;
+    note right
+      - Nom établissement
+      - Note moyenne
+      - Deal(s) disponible(s)
+      - Distance
+      - Bouton "Voir détails"
+    end note
+    
+    if (Clic "Voir détails"?) then (oui)
+      :Navigation vers page détail business;
+      :Affichage deals disponibles;
+      :Historique avis clients;
+    endif
+    
+  elseif (cluster) then
+    :Zoom automatique sur zone cluster;
+    :Éclatement cluster en marqueurs;
+  endif
+  
+  :Modification filtres utilisateur;
+  
+  if (Filtres modifiés?) then (oui)
+    |API Backend|
+    :Nouvelle requête avec filtres;
+    note right
+      Filtres disponibles:
+      - Catégorie établissement
+      - Distance max
+      - % réduction min
+      - Note moyenne min
+      - Expire dans X jours
+    end note
+    
+    :Application filtres sur requête PostGIS;
+    :Retour résultats filtrés;
+    
+    |Client|
+    :Mise à jour marqueurs carte;
+    :Sauvegarde filtres préférés;
+  endif
+
+repeat while (Utilisateur continue navigation?)
+
+if (Deal intéressant trouvé?) then (oui)
+  :Ajout aux favoris (optionnel);
+  :Navigation vers utilisation deal;
+else (non)
+  :Fin session découverte;
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,127 @@
+@startuml Processus d'utilisation d'un deal - DealsMap
+!theme plain
+title Processus d'utilisation d'un deal - DealsMap
+
+|Client|
+start
+
+:Sélection deal depuis carte ou liste;
+:Navigation vers page détail deal;
+
+:Affichage informations complètes;
+note right
+  - Description détaillée
+  - Prix original vs prix deal
+  - % de réduction
+  - Date d'expiration
+  - Conditions d'utilisation
+  - Nombre d'utilisations restantes
+  - Avis autres clients
+end note
+
+if (Utilisateur connecté?) then (non)
+  :Redirection page connexion;
+  :Retour après authentification;
+endif
+
+:Clic "Utiliser ce deal";
+
+|API Backend|
+:Appel POST /api/deals/{id}/use/;
+
+:Vérifications préalables;
+
+if (Deal encore actif?) then (non)
+  :Erreur "Deal expiré ou désactivé";
+  |Client|
+  :Affichage message erreur;
+  stop
+endif
+
+if (Limite utilisations atteinte?) then (oui)
+  :Erreur "Deal épuisé";
+  |Client|
+  :Affichage message "Plus disponible";
+  stop
+endif
+
+if (Utilisateur déjà utilisé ce deal?) then (oui)
+  if (Limite par utilisateur?) then (oui)
+    :Erreur "Déjà utilisé";
+    |Client|
+    :Affichage message limitation;
+    stop
+  endif
+endif
+
+:Enregistrement utilisation;
+
+:Transaction atomique;
+note right
+  BEGIN TRANSACTION;
+  - Incrément current_uses
+  - Création enregistrement DealUsage
+  - Mise à jour analytics
+  - Calcul économies utilisateur
+  COMMIT;
+end note
+
+:Génération code de confirmation;
+note right
+  Code unique pour validation
+  en établissement (QR code ou numérique)
+end note
+
+:Retour confirmation utilisation;
+
+|Client|
+:Affichage confirmation succès;
+:Affichage code de validation;
+
+:Génération QR code;
+note right
+  QR code contenant:
+  - ID deal
+  - ID utilisateur  
+  - Code confirmation
+  - Timestamp
+  - Hash sécurité
+end note
+
+:Ajout à l'historique utilisateur;
+
+|Établissement (optionnel)|
+:Scan QR code ou saisie code;
+:Validation code côté business;
+
+if (Code valide?) then (oui)
+  :Application réduction;
+  :Confirmation utilisation effective;
+  
+  |Analytics Backend|
+  :Mise à jour statistiques;
+  note right
+    - Incrément conversions
+    - Calcul revenus générés
+    - Mise à jour taux conversion
+    - Données géographiques
+  end note
+  
+  |Client|
+  :Notification "Deal utilisé avec succès";
+  :Invitation à laisser un avis;
+  :Mise à jour profil gamification;
+  note right
+    - Points d'expérience
+    - Économies totales
+    - Badges potentiels
+  end note
+  
+else (non)
+  :Erreur validation code;
+  :Log tentative frauduleuse;
+endif
+
+stop
+
+@enduml

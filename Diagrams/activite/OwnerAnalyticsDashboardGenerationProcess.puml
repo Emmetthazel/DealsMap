@@ -1,0 +1,177 @@
+@startuml Processus génération analytics dashboard propriétaire - DealsMap
+!theme plain
+title Processus génération analytics dashboard propriétaire - DealsMap
+
+partition "Propriétaire" {
+  start
+  :Connexion dashboard propriétaire;
+  :Accès section "Analytics";
+  :Sélection période d'analyse;
+  note right
+    Options disponibles:
+    - Dernières 24h
+    - 7 derniers jours  
+    - 30 derniers jours
+    - Période personnalisée
+    - Comparaison périodes
+  end note
+}
+
+partition "API Backend" {
+  :Appel GET /api/analytics/dashboard/;
+  :Récupération ID établissements propriétaire;
+  :Validation permissions accès données;
+  :Requêtes parallèles métriques;
+}
+
+partition "Métriques engagement" {
+  :Calcul vues totales/uniques;
+  note right
+    SELECT 
+      COUNT(*) as total_views,
+      COUNT(DISTINCT user_id) as unique_views
+    FROM deal_views 
+    WHERE deal_id IN (deals_owner)
+    AND created_at BETWEEN start_date AND end_date
+  end note
+
+  :Calcul taux de conversion;
+  note right
+    conversion_rate = 
+    (total_uses / total_views) * 100
+  end note
+}
+
+partition "Métriques performance deals" {
+  :Identification top deals;
+  :Calcul revenus générés par deal;
+  :Analyse tendances temporelles;
+}
+
+partition "Métriques géographiques" {
+  :Analyse origine visiteurs;
+  :Calcul distances moyennes clients;
+  :Identification zones chaudes;
+}
+
+partition "Métriques satisfaction" {
+  :Calcul notes moyennes;
+  :Analyse évolution satisfaction;
+  :Identification points d'amélioration;
+}
+
+partition "API Backend" {
+  :Agrégation toutes métriques;
+  :Génération graphiques données;
+  note right
+    Types de graphiques:
+    - Courbes évolution temporelle
+    - Barres comparaison deals
+    - Camemberts répartition catégories
+    - Cartes de chaleur géographiques
+  end note
+}
+
+partition "Propriétaire" {
+  :Affichage dashboard complet;
+  :Widgets métriques clés;
+  note right
+    - Deals actifs
+    - Vues aujourd'hui
+    - Conversions semaine
+    - Note moyenne
+    - Revenus générés
+  end note
+  :Graphiques interactifs;
+  :Liste deals avec performances;
+
+  if ("Clic sur deal spécifique?") then ("oui")
+    :Drill-down métriques deal;
+
+    partition "API Backend" {
+      :Requête détails deal spécifique;
+      :Métriques granulaires;
+    }
+
+    :Affichage vue détaillée;
+    note right
+      - Évolution vues par jour
+      - Profil utilisateurs intéressés
+      - Géolocalisation utilisations
+      - Avis et commentaires
+      - Comparaison avec deals similaires
+    end note
+  endif
+
+  :Options export données;
+
+  if ("Demande export?") then ("oui")
+    partition "API Backend" {
+      :Génération fichier export;
+
+      if ("Format demandé?") then ("CSV")
+        :Export CSV données brutes;
+      else
+        :Génération rapport PDF;
+        :Inclusion graphiques;
+        :Mise en forme professionnelle;
+      endif
+
+      :Retour lien téléchargement;
+    }
+
+    :Téléchargement fichier;
+  endif
+
+  :Configuration alertes;
+
+  if ("Seuils personnalisés?") then ("oui")
+    :Sauvegarde préférences alertes;
+    note right
+      Alertes disponibles:
+      - Baisse conversion > X%
+      - Deal sans vue depuis X jours
+      - Note moyenne < X étoiles
+      - Nouveau concurrent proximité
+    end note
+
+    partition "Système de monitoring" {
+      :Surveillance seuils configurés;
+
+      if ("Seuil dépassé?") then ("oui")
+        :Génération alerte;
+        :Notification propriétaire;
+        note right
+          Canaux notification:
+          - Email
+          - Notification push
+          - SMS (premium)
+          - Dashboard badge
+        end note
+      endif
+    }
+  endif
+
+  :Recommandations automatiques;
+  note right
+    IA analyse des données pour suggérer:
+    - Optimisation prix deals
+    - Meilleurs créneaux horaires
+    - Catégories tendances
+    - Améliorations établissement
+  end note
+
+  :Consultation recommandations;
+
+  if ("Application recommandation?") then ("oui")
+    :Modification deal/établissement;
+
+    partition "Analytics" {
+      :Tracking efficacité recommandation;
+      :Amélioration algorithmes IA;
+    }
+  endif
+
+  stop
+}
+@enduml

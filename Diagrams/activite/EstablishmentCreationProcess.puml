@@ -1,0 +1,101 @@
+@startuml Processus de création d'établissement - DealsMap
+!theme plain
+title Processus de création d'établissement - DealsMap
+
+|Propriétaire|
+start
+
+:Accès dashboard propriétaire;
+:Clic "Créer établissement";
+:Affichage formulaire création;
+
+:Saisie informations de base;
+note right
+  - Nom établissement
+  - Description
+  - Catégorie
+  - Adresse complète
+  - Téléphone/Email/Site web
+end note
+
+:Sélection géolocalisation;
+
+if (Géolocalisation automatique?) then (oui)
+  :Récupération coordonnées via API;
+  
+  if (Coordonnées trouvées?) then (non)
+    :Saisie manuelle coordonnées;
+  else (oui)
+    :Validation coordonnées;
+  endif
+else (non)
+  :Sélection manuelle sur carte;
+  :Récupération coordonnées du point;
+endif
+
+:Configuration horaires d'ouverture;
+note right
+  Structure JSON par jour:
+  {
+    "lundi": {"open": "09:00", "close": "18:00"},
+    "mardi": {"open": "09:00", "close": "18:00"},
+    ...
+  }
+end note
+
+:Upload image principale;
+
+if (Image fournie?) then (oui)
+  :Validation format/taille image;
+  
+  if (Image valide?) then (non)
+    :Erreur format/taille;
+    :Retour upload;
+  else (oui)
+    :Traitement et stockage image;
+  endif
+else (non)
+  :Image par défaut assignée;
+endif
+
+:Validation formulaire complet;
+
+if (Toutes données valides?) then (non)
+  :Affichage erreurs validation;
+  :Retour correction formulaire;
+else (oui)
+  |API Backend|
+  :Réception POST /api/businesses/;
+  :Validation permissions propriétaire;
+  :Validation données métier;
+  :Création enregistrement Business;
+  :Stockage coordonnées PostGIS;
+  :Statut initial: is_active=true, is_verified=false;
+  :Retour réponse succès + ID business;
+  
+  |Propriétaire|
+  :Redirection vers détail établissement;
+  :Affichage message succès;
+  
+  note right
+    L'établissement est créé mais nécessite
+    une validation admin pour être visible
+    publiquement (is_verified=true)
+  end note
+endif
+
+|Admin (optionnel)|
+:Notification nouveau établissement;
+:Vérification informations;
+
+if (Établissement conforme?) then (oui)
+  :Activation is_verified=true;
+  :Notification propriétaire validation;
+else (non)
+  :Rejet avec motif;
+  :Notification propriétaire rejet;
+endif
+
+stop
+
+@enduml

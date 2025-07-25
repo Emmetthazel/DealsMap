@@ -1,0 +1,140 @@
+@startuml Processus système d'avis et modération - DealsMap
+!theme plain
+title Processus système d'avis et modération - DealsMap
+
+|Client|
+start
+
+:Utilisation d'un deal terminée;
+:Invitation à laisser un avis;
+
+if (Souhaite laisser avis?) then (non)
+  :Fin du processus;
+  stop
+else (oui)
+  :Affichage formulaire avis;
+endif
+
+:Saisie avis;
+note right
+  - Note 1-5 étoiles
+  - Titre avis
+  - Commentaire détaillé
+  - Avis sur établissement ET/OU deal
+end note
+
+:Validation côté client;
+
+if (Données valides?) then (non)
+  :Affichage erreurs validation;
+  :Retour correction;
+else (oui)
+  |API Backend|
+  :Réception POST /api/reviews/;
+  
+  :Vérifications préalables;
+  
+  if (Utilisateur a utilisé le deal?) then (non)
+    :Erreur "Doit avoir utilisé le deal";
+    |Client|
+    :Message erreur autorisation;
+    stop
+  endif
+  
+  if (Avis déjà donné?) then (oui)
+    :Erreur "Avis déjà existant";
+    |Client|
+    :Proposition modification avis existant;
+    stop
+  endif
+  
+  :Création avis avec statut "en_attente";
+  :is_approved = false par défaut;
+  
+  |Système de modération automatique|
+  :Analyse contenu automatique;
+  
+  :Détection spam/contenu inapproprié;
+  
+  if (Contenu suspect détecté?) then (oui)
+    :Flaggage pour modération manuelle;
+    :Statut "requires_manual_review";
+    
+    |Modérateur humain|
+    :Notification nouveau contenu à modérer;
+    :Examen manuel avis;
+    
+    if (Avis conforme?) then (non)
+      :Rejet avis;
+      :is_approved = false;
+      :Enregistrement motif rejet;
+      
+      |Client|
+      :Notification rejet avis;
+      :Explication motif rejet;
+    else (oui)
+      :Approbation avis;
+      :is_approved = true;
+    endif
+    
+  else (non)
+    :Approbation automatique;
+    :is_approved = true;
+  endif
+endif
+
+if (Avis approuvé?) then (oui)
+  |Système de calcul|
+  :Recalcul note moyenne établissement;
+  note right
+    SELECT AVG(rating) 
+    FROM reviews 
+    WHERE business_id = ? 
+    AND is_approved = true
+  end note
+  
+  :Mise à jour Business.average_rating;
+  :Incrément compteur total_reviews;
+  
+  |Analytics|
+  :Mise à jour métriques satisfaction;
+  :Analyse sentiment commentaires;
+  
+  |Propriétaire établissement|
+  :Notification nouvel avis;
+  
+  if (Note < 3 étoiles?) then (oui)
+    :Alerte avis négatif;
+    :Suggestion d'amélioration;
+  endif
+  
+  :Option réponse au commentaire;
+  
+  if (Propriétaire souhaite répondre?) then (oui)
+    :Saisie réponse propriétaire;
+    :Validation réponse;
+    :Publication réponse;
+    :owner_response rempli;
+    :response_date mise à jour;
+    
+    |Client auteur avis|
+    :Notification réponse propriétaire;
+  endif
+  
+  |Client|
+  :Avis publié et visible;
+  :Mise à jour profil utilisateur;
+  note right
+    - Incrément reviews_count
+    - Points gamification
+    - Badge "Reviewer" potentiel
+  end note
+  
+else (non)
+  :Avis non publié;
+  :Stockage pour historique modération;
+endif
+
+stop
+
+@enduml
