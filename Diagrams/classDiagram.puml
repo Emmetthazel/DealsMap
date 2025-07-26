@@ -1,0 +1,175 @@
+@startuml
+left to right direction
+
+package "Utilisateurs" {
+  class User {
+    +id: UUID
+    +username: String
+    +email: String
+    +password: String
+    +first_name: String
+    +last_name: String
+    +phone: String
+    +user_type: String [client|owner]
+    +is_verified: Boolean
+    +created_at: DateTime
+    +updated_at: DateTime
+    +get_full_name(): String
+    +is_owner(): Boolean
+    +is_client(): Boolean
+  }
+
+  class UserProfile {
+    +id: UUID
+    +user_id: UUID
+    +total_savings: Decimal
+    +deals_used_count: Integer
+    +reviews_count: Integer
+    +level: Integer
+    +experience_points: Integer
+    +badges: JSON
+    +favorite_categories: ManyToMany
+    +notification_preferences: JSON
+    +created_at: DateTime
+    +calculate_level(): Integer
+    +add_experience(points): void
+  }
+
+  class Notification {
+    +id: UUID
+    +user_id: UUID
+    +type: String
+    +title: String
+    +message: Text
+    +data: JSON
+    +is_read: Boolean
+    +created_at: DateTime
+  }
+}
+
+package "Business & Catégories" {
+  class Category {
+    +id: UUID
+    +name: String
+    +slug: String
+    +parent_id: UUID
+    +icon: String
+    +color: String
+    +description: Text
+    +is_active: Boolean
+    +created_at: DateTime
+    +get_children(): QuerySet
+    +get_full_path(): String
+  }
+
+  class Business {
+    +id: UUID
+    +owner_id: UUID
+    +name: String
+    +description: Text
+    +category_id: UUID
+    +location: Point
+    +address: String
+    +city: String
+    +postal_code: String
+    +phone: String
+    +email: String
+    +website: String
+    +opening_hours: JSON
+    +main_image: ImageField
+    +is_active: Boolean
+    +is_verified: Boolean
+    +average_rating: Decimal
+    +total_reviews: Integer
+    +created_at: DateTime
+    +get_active_deals(): QuerySet
+    +calculate_distance(lat, lng): Float
+    +is_open_now(): Boolean
+  }
+}
+
+package "Deals & Reviews" {
+  class Deal {
+    +id: UUID
+    +business_id: UUID
+    +title: String
+    +description: Text
+    +original_price: Decimal
+    +deal_price: Decimal
+    +discount_percentage: Decimal
+    +image: ImageField
+    +start_date: DateTime
+    +end_date: DateTime
+    +max_uses: Integer
+    +current_uses: Integer
+    +conditions: Text
+    +is_active: Boolean
+    +created_at: DateTime
+    +is_valid(): Boolean
+    +is_expired(): Boolean
+    +calculate_discount(): Decimal
+    +increment_usage(): void
+  }
+
+  class Review {
+    +id: UUID
+    +user_id: UUID
+    +business_id: UUID
+    +deal_id: UUID
+    +rating: Integer [1-5]
+    +title: String
+    +comment: Text
+    +is_approved: Boolean
+    +owner_response: Text
+    +response_date: DateTime
+    +created_at: DateTime
+  }
+}
+
+package "Interactions" {
+  class DealUsage {
+    +id: UUID
+    +user_id: UUID
+    +deal_id: UUID
+    +used_at: DateTime
+    +amount_saved: Decimal
+    +location: Point
+  }
+
+  class ViewEvent {
+    +id: UUID
+    +deal_id: UUID
+    +user_id: UUID
+    +event_type: String [view|click|use]
+    +ip_address: String
+    +user_agent: Text
+    +device_type: String
+    +location: Point
+    +timestamp: DateTime
+  }
+}
+
+' --- Relations ---
+
+User "1" -- "1" UserProfile : has / belongs_to
+User "1" -- "0..*" Business : owns / owned_by
+User "1" -- "0..*" Review : writes / written_by
+User "1" -- "0..*" DealUsage : uses / used_by
+User "1" -- "0..*" Notification : receives / belongs_to
+User "1" -- "0..*" ViewEvent : generates / generated_by
+
+Category "1" -- "0..*" Category : parent / children
+
+Category "1" -- "0..*" Business : categorizes / categorized_in
+
+Business "1" -- "0..*" Deal : contains / belongs_to
+
+Business "1" -- "0..*" Review : receives / about
+
+Deal "1" -- "0..*" Review : has_reviews / about_deal
+
+Deal "1" -- "0..*" DealUsage : used / uses
+
+Deal "1" -- "0..*" ViewEvent : tracked / tracks
+
+@enduml
