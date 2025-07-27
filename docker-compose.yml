@@ -39,6 +39,17 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
   
+  frontend:
+    build: ./Frontend
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      - ./Frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+      
   celery:
     build: ./DealsMap
     command: celery -A dealsmap worker -l info
