@@ -1,93 +1,84 @@
-## 🏁 Sprint 0 – Setup & Préparation : Étapes détaillées
+## 🏁 Sprint 0 – Setup & Preparation: Detailed Steps
 
-### 1. **Préparation de l’environnement de développement**
+### 1. **Development Environment Preparation**
 
-- Installer Python 3.13.2
-- Installer Node.js v20.18.0 et npm
-- Installer PostgreSQL 17.4 et l’extension PostGIS 3.5
-- Installer VS Code
-- Installer Git
-- Installer Postman et pgAdmin
-
----
-
-### 2. **Initialisation du repository Git**
-
-- Créer un nouveau dossier pour le projet (`MyDealsMap`)
-- Initialiser un dépôt Git (`git init`)
-- Créer un `.gitignore` adapté (Python, Node, etc.)
-- Créer un repository distant (GitHub) et le lier
+- Install Python 3.11
+- Install PostgreSQL 17.4 and PostGIS 3.5 extension
+- Install VS Code
+- Install Git
+- Install Postman and pgAdmin
 
 ---
 
-### 3. **Setup Docker Environment**
+### 2. **Git Repository Initialization**
 
-- Installer `Docker` et `Docker Compose`
-- Créer un `docker-compose.yml` avec 3 services :
-    ○ PostgreSQL avec PostGIS (port 5432)
-    ○ Redis pour cache/queue (port 6379)
-    ○ Backend Django (port 8000)
-- Configurer les volumes persistants pour la DB
+- Create a new project folder (`DealsMap`)
+- Initialize a Git repository (`git init`)
+- Create a `.gitignore` for Python, Node, etc.
+- Create a remote repository (GitHub) and link it
 
 ---
 
-### 4. **Mise en place de la base de données**
+### 3. **Docker Environment Setup**
 
-- Créer une base PostgreSQL nommée `dealsmap`
-- Activer l’extension PostGIS et et PostGIS_topology sur cette base
-- Créer un utilisateur PostgreSQL dédié au projet (avec mot de passe sécurisé)
-- Tester la connexion à la base via pgAdmin
-
----
-
-### 5. **Initialisation du Backend (Django + DRF)**
-
-- Créer un environnement virtuel Python (`python -m venv venv`)
-- Activer l’environnement virtuel
-- Installer Django, djangorestframework, psycopg2, django-cors-headers, django-redis.
-- Créer le projet Django (`django-admin startproject dealsmap`)
-- Créer les apps de base :
-
-  ###### apps/
-
-  -`authentication` (gestion utilisateurs)
-
-  -`businesses` (établissements)
-
-  -`deals` (offres)
-
-  -`reviews` (avis)
-
-  -`categories` (catégories)
-
-  -`analytics` (analytique)
-
-  -`notifications` (notifications)  
-- Configurer la connexion à PostgreSQL/PostGIS dans `settings.py`
-- Appliquer les premières migrations (`python manage.py migrate`)
-- Créer un superuser pour l’admin Django
-- Tester l’accès à l’admin Django
+- Install Docker and Docker Compose
+- Create a `docker-compose.yml` with these services:
+  - PostgreSQL with PostGIS (port 5432)
+  - Redis for cache/queue (port 6379)
+  - Django backend (port 8000)
+  - React frontend (port 5173)
+  - Celery worker (background tasks)
+- Configure persistent volumes for the database
+- Create Dockerfiles for backend and frontend
 
 ---
 
-### 6. **Initialisation du Frontend (React + OpenLayers)**
+### 4. **Database Setup**
 
-- Créer le dossier `frontend`
-- Initialiser le projet React (`npx create-react-app .`)
-- Installer les dépendances : OpenLayers, axios, tailwindcss, etc.
-- Organiser la structure des dossiers :
+- Create a PostgreSQL database named `dealsmap`
+- Enable PostGIS and PostGIS_topology extensions
+- Create a dedicated PostgreSQL user with a secure password
+- Test database connection via pgAdmin
 
-  ###### src/
+---
 
-  -`components/`
+### 5. **Backend Initialization (Django + DRF, with Docker)**
 
-  -`pages/`
+- Use Docker for backend development:
+  - Write a `Dockerfile` for Django backend
+  - Build and run the backend container with Docker Compose
+- Install Django, djangorestframework, psycopg2, django-cors-headers, django-redis, celery (in Docker)
+- Start the Django project (`django-admin startproject dealsmap`)
+- Create base apps:
+  - authentication, businesses, deals, reviews, categories, analytics, notifications
+- Configure PostgreSQL/PostGIS connection in `base.py`
+- Apply initial migrations (`python manage.py migrate`) inside the backend container
+- Create a Django superuser 
+- Test access to Django admin via the running container
 
-  -`hooks/`
+---
 
-  -`services/`
+### 6. **Frontend Initialization (React + OpenLayers, with Docker)**
 
-  -`utils/`
+- Create the `Frontend` folder
+- Use Docker for frontend development:
+  - Write a `Dockerfile` for React frontend
+  - Build and run the frontend container with Docker Compose
+- Initialize the React project (`npm create vite@latest .`)
+- Install dependencies: OpenLayers, axios, tailwindcss, etc.
+- Organize folder structure:
+  - components/, pages/, hooks/, services/, utils/, store/
+- Launch the React app via Docker Compose to verify setup
 
-  -`store/`
-- Lancer l’app React pour vérifier que tout fonctionne
+---
+
+### 7. **Basic Integration & Testing**
+
+- Test Docker Compose setup (`docker compose up`)
+- Verify all containers start correctly
+- Check frontend at [http://localhost:5173](http://localhost:5173)
+- Check backend at [http://localhost:8000](http://localhost:8000)
+- Confirm database and Redis connectivity
+- Run a basic Celery task
+
+---
