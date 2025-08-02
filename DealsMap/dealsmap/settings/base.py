@@ -166,6 +166,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Custom User Model
+AUTH_USER_MODEL = 'authentication.User'
+
 # Redis cache configuration
 # Ensure you have django-redis installed: pip install django-redis
 CACHES = {
