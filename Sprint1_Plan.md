@@ -1,4 +1,4 @@
-# Sprint 1 – Foundation & Authentication (Semaines 1-2)
+# Sprint 1 – Foundation & Authentication (Semaines 1)
 
 ## Objectif du Sprint
 
@@ -28,9 +28,9 @@ Créer les fondations solides avec authentification complète, gestion des caté
 - [X] Étendre `AbstractUser` (`CustomUser`)
 - [X] Champs : `phone`, `user_type`, `is_verified, created_at`
 - [X] Configurer `AUTH_USER_MODEL` dans `settings.py`
-- [ ] Serializers pour inscription et login
-- [ ] Endpoints : `/api/register/`, `/api/login/`, `/api/logout/`, `/api/token/refresh/`
-- [ ] Tests avec Postman / Thunder Client
+- [X] Serializers pour inscription et login
+- [X] Endpoints : `/api/register/`, `/api/login/`, `/api/logout/`, `/api/profile/`, `/api/token/refresh/`
+- [X] Tests avec Postman / Thunder Client
 
 #### Frontend :
 
@@ -71,7 +71,7 @@ Créer les fondations solides avec authentification complète, gestion des caté
 ### Backend :
 
 - [X] Tests unitaires `User` model + validations
-- [ ] Tests API auth : register/login/refresh/logout
+- [X] Tests API auth : register/login/refresh/logout
 - [ ] Tests model `Category` + API
 
 ### Frontend :
