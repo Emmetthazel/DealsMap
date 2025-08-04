@@ -62,25 +62,36 @@ class UserLoginSerializer(serializers.Serializer):
     """
     Serializer pour la connexion d'un utilisateur.
     """
-    username = serializers.CharField(max_length=150)
+    username = serializers.CharField(max_length=150, help_text="Nom d'utilisateur ou email")
     password = serializers.CharField(max_length=128, write_only=True)
     
     def validate(self, attrs):
         """
         Validation des identifiants de connexion.
         """
-        username = attrs.get('username')
+        username_or_email = attrs.get('username')
         password = attrs.get('password')
         
-        if username and password:
-            user = authenticate(username=username, password=password) # Vérifie si l'utilisateur existe et si le mot de passe est correct
-            if not user:
+        if username_or_email and password:
+            # Try to find user by username or email
+            try:
+                user = User.objects.get(username=username_or_email)
+            except User.DoesNotExist:
+                try:
+                    user = User.objects.get(email=username_or_email)
+                except User.DoesNotExist:
+                    raise serializers.ValidationError("Identifiants invalides.")
+            
+            # Check password
+            if not user.check_password(password):
                 raise serializers.ValidationError("Identifiants invalides.")
+            
             if not user.is_active:
                 raise serializers.ValidationError("Ce compte est désactivé.")
+            
             attrs['user'] = user
         else:
-            raise serializers.ValidationError("Le nom d'utilisateur et le mot de passe sont requis.")
+            raise serializers.ValidationError("Le nom d'utilisateur/email et le mot de passe sont requis.")
         
         return attrs
 

@@ -61,12 +61,16 @@ const LoginForm = () => {
       return;
     }
     
+    // Debug: Log what data is being sent
+    console.log('Login form data:', formData);
+    
     try {
       await login(formData);
       toast.success('Connexion réussie!');
       navigate('/dashboard'); // Redirect to dashboard after successful login
     } catch (error) {
       // Error is handled by the store
+      console.error('Login error:', error);
       toast.error(error.message);
     }
   };
@@ -74,38 +78,31 @@ const LoginForm = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Connexion à votre compte
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Ou{' '}
-            <Link
-              to="/register"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              créez un nouveau compte
-            </Link>
-          </p>
+        <div className="text-center">
+          <div className="flex items-center justify-center text-3xl font-bold text-blue-600 mb-2">
+            <i className="fas fa-map-marked-alt mr-2"></i>
+            DealsMap
+          </div>
+          <p className="text-gray-600">Connectez-vous pour découvrir les meilleurs deals</p>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="username" className="sr-only">
-                Nom d'utilisateur
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nom d'utilisateur ou email
               </label>
               <input
                 id="username"
                 name="username"
                 type="text"
                 required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
+                className={`w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.username 
-                    ? 'border-red-300 placeholder-red-500 text-red-900 focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm' 
-                    : 'border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
-                } rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
-                placeholder="Nom d'utilisateur"
+                    ? 'border-red-300' 
+                    : 'border-gray-300'
+                }`}
+                placeholder="votre@email.com"
                 value={formData.username}
                 onChange={handleInputChange}
               />
@@ -116,35 +113,37 @@ const LoginForm = () => {
               )}
             </div>
             
-            <div className="relative">
-              <label htmlFor="password" className="sr-only">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Mot de passe
               </label>
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  validationErrors.password 
-                    ? 'border-red-300 placeholder-red-500 text-red-900 focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm' 
-                    : 'border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
-                } rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm pr-10`}
-                placeholder="Mot de passe"
-                value={formData.password}
-                onChange={handleInputChange}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <Eye className="h-5 w-5 text-gray-400" />
-                )}
-              </button>
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className={`w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 ${
+                    validationErrors.password 
+                      ? 'border-red-300' 
+                      : 'border-gray-300'
+                  }`}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
               {validationErrors.password && (
                 <p className="mt-1 text-sm text-red-600">
                   {validationErrors.password}
@@ -153,8 +152,21 @@ const LoginForm = () => {
             </div>
           </div>
 
+          <div className="flex items-center justify-between">
+            <label className="flex items-center">
+              <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <span className="ml-2 text-sm text-gray-600">Se souvenir de moi</span>
+            </label>
+            <Link
+              to="/forgot-password"
+              className="text-sm text-blue-600 hover:text-blue-500"
+            >
+              Mot de passe oublié ?
+            </Link>
+          </div>
+
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-lg bg-red-50 p-4">
               <div className="flex">
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-red-800">
@@ -168,32 +180,52 @@ const LoginForm = () => {
             </div>
           )}
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                  Connexion en cours...
-                </>
-              ) : (
-                'Se connecter'
-              )}
-            </button>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                Connexion en cours...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-sign-in-alt mr-2"></i>
+                Se connecter
+              </>
+            )}
+          </button>
+
+          <div className="text-center">
+            <span className="text-gray-500">ou</span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link
-                to="/forgot-password"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Mot de passe oublié?
-              </Link>
-            </div>
+          <button
+            type="button"
+            className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <i className="fab fa-facebook-f mr-2 text-blue-600"></i>
+            Continuer avec Facebook
+          </button>
+
+          <button
+            type="button"
+            className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <i className="fab fa-google mr-2 text-red-600"></i>
+            Continuer avec Google
+          </button>
+
+          <div className="text-center">
+            <span className="text-gray-500">Pas encore de compte ?</span>
+            <Link
+              to="/register"
+              className="ml-1 text-blue-600 hover:text-blue-500 font-medium"
+            >
+              Créer un compte
+            </Link>
           </div>
         </form>
       </div>

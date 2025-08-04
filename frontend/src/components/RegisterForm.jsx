@@ -116,71 +116,59 @@ const RegisterForm = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Créer un nouveau compte
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Ou{' '}
-            <Link
-              to="/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              connectez-vous à votre compte existant
-            </Link>
-          </p>
+        <div className="text-center">
+          <div className="flex items-center justify-center text-3xl font-bold text-blue-600 mb-2">
+            <i className="fas fa-map-marked-alt mr-2"></i>
+            DealsMap
+          </div>
+        </div>
+
+        {/* User Type Selection */}
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, user_type: 'client' }))}
+            className={`flex-1 flex items-center justify-center py-3 px-4 rounded-lg text-base font-medium transition-colors ${
+              formData.user_type === 'client'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50'
+            }`}
+          >
+            <i className="fas fa-user mr-2"></i>
+            Utilisateur
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, user_type: 'owner' }))}
+            className={`flex-1 flex items-center justify-center py-3 px-4 rounded-lg text-base font-medium transition-colors ${
+              formData.user_type === 'owner'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50'
+            }`}
+          >
+            <i className="fas fa-store mr-2"></i>
+            Propriétaire
+          </button>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {/* User Type Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type de compte
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, user_type: 'client' }))}
-                  className={`flex items-center justify-center px-4 py-2 border rounded-md text-sm font-medium ${
-                    formData.user_type === 'client'
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Client
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, user_type: 'owner' }))}
-                  className={`flex items-center justify-center px-4 py-2 border rounded-md text-sm font-medium ${
-                    formData.user_type === 'owner'
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Propriétaire
-                </button>
-              </div>
-            </div>
 
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
-                  Prénom *
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prénom
                 </label>
                 <input
                   id="first_name"
                   name="first_name"
                   type="text"
                   required
-                  className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                  className={`w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     validationErrors.first_name ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Prénom"
+                  placeholder="Votre prénom"
                   value={formData.first_name}
                   onChange={handleInputChange}
                 />
@@ -192,18 +180,18 @@ const RegisterForm = () => {
               </div>
               
               <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
-                  Nom de famille *
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom
                 </label>
                 <input
                   id="last_name"
                   name="last_name"
                   type="text"
                   required
-                  className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                  className={`w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     validationErrors.last_name ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Nom de famille"
+                  placeholder="Votre nom"
                   value={formData.last_name}
                   onChange={handleInputChange}
                 />
@@ -215,44 +203,20 @@ const RegisterForm = () => {
               </div>
             </div>
 
-            {/* Username */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Nom d'utilisateur *
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
-                  validationErrors.username ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="Nom d'utilisateur"
-                value={formData.username}
-                onChange={handleInputChange}
-              />
-              {validationErrors.username && (
-                <p className="mt-1 text-sm text-red-600">
-                  {validationErrors.username}
-                </p>
-              )}
-            </div>
-
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email *
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Adresse email
               </label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 required
-                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                className={`w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.email ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="email@exemple.com"
+                placeholder="votre@email.com"
                 value={formData.email}
                 onChange={handleInputChange}
               />
@@ -265,17 +229,17 @@ const RegisterForm = () => {
 
             {/* Phone */}
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Téléphone
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Numéro de téléphone
               </label>
               <input
                 id="phone"
                 name="phone"
                 type="tel"
-                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                className={`w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.phone ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="0661000000"
+                placeholder="+212 6XX XXX XXX"
                 value={formData.phone}
                 onChange={handleInputChange}
               />
@@ -286,10 +250,34 @@ const RegisterForm = () => {
               )}
             </div>
 
+                         {/* Username */}
+             <div>
+               <label className="block text-sm font-medium text-gray-700 mb-2">
+                 Nom d'utilisateur
+               </label>
+               <input
+                 id="username"
+                 name="username"
+                 type="text"
+                 required
+                 className={`w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                   validationErrors.username ? 'border-red-300' : 'border-gray-300'
+                 }`}
+                 placeholder="Nom d'utilisateur"
+                 value={formData.username}
+                 onChange={handleInputChange}
+               />
+               {validationErrors.username && (
+                 <p className="mt-1 text-sm text-red-600">
+                   {validationErrors.username}
+                 </p>
+               )}
+             </div>
+
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Mot de passe *
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mot de passe
               </label>
               <div className="relative">
                 <input
@@ -297,10 +285,10 @@ const RegisterForm = () => {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10 ${
+                  className={`w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 ${
                     validationErrors.password ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Mot de passe"
+                  placeholder="Minimum 8 caractères"
                   value={formData.password}
                   onChange={handleInputChange}
                 />
@@ -325,8 +313,8 @@ const RegisterForm = () => {
 
             {/* Password Confirm */}
             <div>
-              <label htmlFor="password_confirm" className="block text-sm font-medium text-gray-700">
-                Confirmer le mot de passe *
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmer le mot de passe
               </label>
               <div className="relative">
                 <input
@@ -334,10 +322,10 @@ const RegisterForm = () => {
                   name="password_confirm"
                   type={showPasswordConfirm ? 'text' : 'password'}
                   required
-                  className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10 ${
+                  className={`w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 ${
                     validationErrors.password_confirm ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Confirmer le mot de passe"
+                  placeholder="Retapez votre mot de passe"
                   value={formData.password_confirm}
                   onChange={handleInputChange}
                 />
@@ -361,8 +349,21 @@ const RegisterForm = () => {
             </div>
           </div>
 
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer text-sm leading-relaxed">
+              <input 
+                type="checkbox" 
+                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                required 
+              />
+              <span>
+                J'accepte les <a href="#" className="text-blue-600 hover:text-blue-500">conditions d'utilisation</a> et la <a href="#" className="text-blue-600 hover:text-blue-500">politique de confidentialité</a>
+              </span>
+            </label>
+          </div>
+
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-lg bg-red-50 p-4">
               <div className="flex">
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-red-800">
@@ -376,21 +377,32 @@ const RegisterForm = () => {
             </div>
           )}
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                Inscription en cours...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-user-plus mr-2"></i>
+                Créer mon compte
+              </>
+            )}
+          </button>
+
+          <div className="text-center">
+            <span className="text-gray-500">Déjà un compte ?</span>
+            <Link
+              to="/login"
+              className="ml-1 text-blue-600 hover:text-blue-500 font-medium"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                  Inscription en cours...
-                </>
-              ) : (
-                'Créer mon compte'
-              )}
-            </button>
+              Se connecter
+            </Link>
           </div>
         </form>
       </div>

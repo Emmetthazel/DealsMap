@@ -89,7 +89,10 @@ class AuthService {
    */
   static async login(credentials) {
     try {
+      console.log('AuthService login - sending credentials:', credentials);
       const response = await authAPI.post('/auth/login/', credentials); // Send login credentials to the server
+      
+      console.log('AuthService login - response:', response.data);
       
       // Store tokens
       if (response.data.tokens) {

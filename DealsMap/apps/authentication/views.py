@@ -79,14 +79,19 @@ class UserLogoutView(APIView):
         try:
             refresh_token = request.data.get('refresh_token')
             if refresh_token:
-                token = RefreshToken(refresh_token)
-                token.blacklist() # Désactive le token
+                try:
+                    token = RefreshToken(refresh_token)
+                    token.blacklist() # Désactive le token
+                except Exception as token_error:
+                    # If token is invalid, we still want to logout the user
+                    print(f"Token blacklist error: {token_error}")
             
             logout(request)
             return Response({
                 'message': 'Déconnexion réussie!'
             }, status=status.HTTP_200_OK)
         except Exception as e:
+            print(f"Logout error: {e}")
             return Response({
                 'error': 'Erreur lors de la déconnexion'
             }, status=status.HTTP_400_BAD_REQUEST)
