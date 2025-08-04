@@ -34,14 +34,14 @@ Créer les fondations solides avec authentification complète, gestion des caté
 
 #### Frontend :
 
-- [ ] Créer `AuthStore.js` (Zustand)
-- [ ] Créer `AuthService.js` (API calls)
-- [ ] Composants :
-  - [ ] `LoginForm.jsx`
-  - [ ] `RegisterForm.jsx`
-- [ ] Ajouter `PrivateRoute.jsx`
-- [ ] Gérer les erreurs / loading / redirections
-- [ ] Ajouter des `toasts` pour feedback utilisateur
+- [X] Créer `AuthStore.js` (Zustand)
+- [X] Créer `AuthService.js` (API calls)
+- [X] Composants :
+  - [X] `LoginForm.jsx`
+  - [X] `RegisterForm.jsx`
+- [X] Ajouter `PrivateRoute.jsx`
+- [X] Gérer les erreurs / loading / redirections
+- [X] Ajouter des `toasts` pour feedback utilisateur
 
 ---
 
@@ -76,7 +76,7 @@ Créer les fondations solides avec authentification complète, gestion des caté
 
 ### Frontend :
 
-- [ ] Tester `LoginForm` et `RegisterForm` (React Testing Library)
+- [X] Tester `LoginForm` et `RegisterForm` (React Testing Library)
 - [ ] Tester `CategoryPicker`
 - [ ] Couverture visée : **> 80%**
 
