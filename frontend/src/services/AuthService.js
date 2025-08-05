@@ -3,6 +3,42 @@ import axios from 'axios';
 // Create axios instance with base configuration
 const API_BASE_URL = 'http://localhost:8000/api';
 
+// Storage keys
+const ACCESS_TOKEN_KEY = 'access_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
+const STORAGE_TYPE_KEY = 'auth_storage_type'; // 'local' or 'session'
+
+// Helper functions for storage management
+const getStorage = () => {
+  const storageType = localStorage.getItem(STORAGE_TYPE_KEY);
+  return storageType === 'local' ? localStorage : sessionStorage;
+};
+
+const setTokens = (tokens, rememberMe) => {
+  const storage = rememberMe ? localStorage : sessionStorage;
+  storage.setItem(ACCESS_TOKEN_KEY, tokens.access);
+  storage.setItem(REFRESH_TOKEN_KEY, tokens.refresh);
+  localStorage.setItem(STORAGE_TYPE_KEY, rememberMe ? 'local' : 'session');
+};
+
+const getAccessToken = () => {
+  const storage = getStorage();
+  return storage.getItem(ACCESS_TOKEN_KEY);
+};
+
+const getRefreshToken = () => {
+  const storage = getStorage();
+  return storage.getItem(REFRESH_TOKEN_KEY);
+};
+
+const clearTokens = () => {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(STORAGE_TYPE_KEY);
+};
+
 const authAPI = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -13,9 +49,9 @@ const authAPI = axios.create({
 // Request interceptor to add auth token to requests
 authAPI.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = getAccessToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`; // Add token to request headers
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -35,14 +71,18 @@ authAPI.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
+        const refreshToken = getRefreshToken();
         if (refreshToken) {
           const response = await authAPI.post('/auth/token/refresh/', {
             refresh: refreshToken,
           });
           
           const { access } = response.data;
-          localStorage.setItem('access_token', access);
+          const rememberMe = localStorage.getItem(STORAGE_TYPE_KEY) === 'local';
+          
+          // Store the new access token in the same storage type
+          const storage = rememberMe ? localStorage : sessionStorage;
+          storage.setItem(ACCESS_TOKEN_KEY, access);
           
           // Retry the original request with new token
           originalRequest.headers.Authorization = `Bearer ${access}`;
@@ -50,8 +90,7 @@ authAPI.interceptors.response.use(
         }
       } catch (refreshError) {
         // Refresh failed, clear tokens and redirect to login
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        clearTokens();
         window.location.href = '/login';
       }
     }
@@ -64,16 +103,16 @@ class AuthService {
   /**
    * Register a new user
    * @param {Object} userData - User registration data
+   * @param {boolean} rememberMe - Whether to remember the user
    * @returns {Promise} - Registration response
    */
-  static async register(userData) {
+  static async register(userData, rememberMe = false) {
     try {
       const response = await authAPI.post('/auth/register/', userData);
       
       // Store tokens if registration is successful
       if (response.data.tokens) {
-        localStorage.setItem('access_token', response.data.tokens.access);
-        localStorage.setItem('refresh_token', response.data.tokens.refresh);
+        setTokens(response.data.tokens, rememberMe);
       }
       
       return response.data;
@@ -85,19 +124,21 @@ class AuthService {
   /**
    * Login user
    * @param {Object} credentials - Login credentials
+   * @param {boolean} rememberMe - Whether to remember the user
    * @returns {Promise} - Login response
    */
-  static async login(credentials) {
+  static async login(credentials, rememberMe = false) {
     try {
       console.log('AuthService login - sending credentials:', credentials);
-      const response = await authAPI.post('/auth/login/', credentials); // Send login credentials to the server
+      console.log('AuthService login - rememberMe:', rememberMe);
+      
+      const response = await authAPI.post('/auth/login/', credentials);
       
       console.log('AuthService login - response:', response.data);
       
-      // Store tokens
+      // Store tokens in the appropriate storage
       if (response.data.tokens) {
-        localStorage.setItem('access_token', response.data.tokens.access);
-        localStorage.setItem('refresh_token', response.data.tokens.refresh);
+        setTokens(response.data.tokens, rememberMe);
       }
       
       return response.data;
@@ -112,7 +153,7 @@ class AuthService {
    */
   static async logout() {
     try {
-      const refreshToken = localStorage.getItem('refresh_token');
+      const refreshToken = getRefreshToken();
       if (refreshToken) {
         await authAPI.post('/auth/logout/', {
           refresh_token: refreshToken,
@@ -122,8 +163,7 @@ class AuthService {
       console.error('Logout error:', error);
     } finally {
       // Clear tokens regardless of API call success
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      clearTokens();
     }
   }
 
@@ -133,7 +173,7 @@ class AuthService {
    */
   static async getProfile() {
     try {
-      const response = await authAPI.get('/auth/profile/'); // Get user profile from the server
+      const response = await authAPI.get('/auth/profile/');
       return response.data;
     } catch (error) {
       throw this.handleError(error);
@@ -147,7 +187,7 @@ class AuthService {
    */
   static async updateProfile(profileData) {
     try {
-      const response = await authAPI.put('/auth/profile/', profileData); // put request to update user profile
+      const response = await authAPI.put('/auth/profile/', profileData);
       return response.data;
     } catch (error) {
       throw this.handleError(error);
@@ -161,7 +201,7 @@ class AuthService {
    */
   static async changePassword(passwordData) {
     try {
-      const response = await authAPI.post('/auth/change-password/', passwordData); // Send password change data to the server
+      const response = await authAPI.post('/auth/change-password/', passwordData);
       return response.data;
     } catch (error) {
       throw this.handleError(error);
@@ -173,7 +213,7 @@ class AuthService {
    * @returns {boolean} - Authentication status
    */
   static isAuthenticated() {
-    return !!localStorage.getItem('access_token'); // Check if access token is present in local storage
+    return !!getAccessToken();
   }
 
   /**
@@ -182,9 +222,17 @@ class AuthService {
    */
   static getTokens() {
     return {
-      access: localStorage.getItem('access_token'),
-      refresh: localStorage.getItem('refresh_token'),
+      access: getAccessToken(),
+      refresh: getRefreshToken(),
     };
+  }
+
+  /**
+   * Get storage type (local or session)
+   * @returns {string} - Storage type
+   */
+  static getStorageType() {
+    return localStorage.getItem(STORAGE_TYPE_KEY) || 'session';
   }
 
   /**

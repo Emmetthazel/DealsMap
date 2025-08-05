@@ -14,6 +14,7 @@ const LoginForm = () => {
   });
   
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
   const handleInputChange = (e) => {
@@ -63,9 +64,10 @@ const LoginForm = () => {
     
     // Debug: Log what data is being sent
     console.log('Login form data:', formData);
+    console.log('Remember me:', rememberMe);
     
     try {
-      await login(formData);
+      await login(formData, rememberMe);
       toast.success('Connexion réussie!');
       navigate('/dashboard'); // Redirect to dashboard after successful login
     } catch (error) {
@@ -154,7 +156,12 @@ const LoginForm = () => {
 
           <div className="flex items-center justify-between">
             <label className="flex items-center">
-              <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <input 
+                type="checkbox" 
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
               <span className="ml-2 text-sm text-gray-600">Se souvenir de moi</span>
             </label>
             <Link

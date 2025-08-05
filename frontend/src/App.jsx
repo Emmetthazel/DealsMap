@@ -1,15 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
 import useAuthStore from './store/AuthStore';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import PrivateRoute from './components/PrivateRoute';
+import AuthService from './services/AuthService';
 
 // Placeholder Dashboard component
 const Dashboard = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, rememberMe } = useAuthStore();
   const navigate = useNavigate();
   
   const handleLogout = async () => {
@@ -21,6 +23,8 @@ const Dashboard = () => {
       toast.error('Erreur lors de la déconnexion');
     }
   };
+  
+  const storageType = AuthService.getStorageType();
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -34,12 +38,21 @@ const Dashboard = () => {
               <span className="text-gray-700">
                 Bonjour, {user?.first_name || user?.username}!
               </span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Déconnexion
-              </button>
+              <div className="flex items-center space-x-2">
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  storageType === 'local' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {storageType === 'local' ? 'Persistant' : 'Session'}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  Déconnexion
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -52,9 +65,13 @@ const Dashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 Tableau de bord
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-600 mb-4">
                 Bienvenue sur DealsMap! Votre tableau de bord sera bientôt disponible.
               </p>
+              <div className="text-sm text-gray-500">
+                <p>Type de stockage: <strong>{storageType === 'local' ? 'localStorage (Persistant)' : 'sessionStorage (Session)'}</strong></p>
+                <p>Se souvenir de moi: <strong>{rememberMe ? 'Activé' : 'Désactivé'}</strong></p>
+              </div>
             </div>
           </div>
         </div>
@@ -63,13 +80,45 @@ const Dashboard = () => {
   );
 };
 
+// Loading component
+const LoadingScreen = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="text-center">
+      <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
+      <h2 className="text-xl font-semibold text-gray-900 mb-2">
+        Chargement...
+      </h2>
+      <p className="text-gray-600">
+        Vérification de votre session
+      </p>
+    </div>
+  </div>
+);
+
 const App = () => {
-  const { initializeAuth } = useAuthStore();
+  const { initializeAuth, isAuthenticated } = useAuthStore();
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    // Initialize authentication state when app loads
-    initializeAuth();
+    const initApp = async () => {
+      try {
+        console.log('🚀 Starting app initialization...');
+        await initializeAuth();
+        console.log('✅ App initialization complete');
+      } catch (error) {
+        console.error('❌ App initialization failed:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initApp();
   }, [initializeAuth]);
+
+  // Show loading screen while initializing
+  if (isInitializing) {
+    return <LoadingScreen />;
+  }
 
   return (
     <Router>

@@ -10,22 +10,24 @@ const useAuthStore = create(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      rememberMe: false,
 
       // Actions
       /**
        * Register a new user
        */
-      register: async (userData) => {
+      register: async (userData, rememberMe = false) => {
         set({ isLoading: true, error: null });
         
         try {
-          const response = await AuthService.register(userData);
+          const response = await AuthService.register(userData, rememberMe);
           
           set({
             user: response.user,
             isAuthenticated: true,
             isLoading: false,
             error: null,
+            rememberMe,
           });
           
           return response;
@@ -41,17 +43,18 @@ const useAuthStore = create(
       /**
        * Login user
        */
-      login: async (credentials) => {
+      login: async (credentials, rememberMe = false) => {
         set({ isLoading: true, error: null });
         
         try {
-          const response = await AuthService.login(credentials);
+          const response = await AuthService.login(credentials, rememberMe);
           
           set({
             user: response.user,
             isAuthenticated: true,
             isLoading: false,
             error: null,
+            rememberMe,
           });
           
           return response;
@@ -80,6 +83,7 @@ const useAuthStore = create(
             isAuthenticated: false,
             isLoading: false,
             error: null,
+            rememberMe: false,
           });
         }
       },
@@ -161,32 +165,46 @@ const useAuthStore = create(
 
       /**
        * Initialize auth state on app load
+       * This function checks if tokens exist and are valid
        */
       initializeAuth: async () => {
+        console.log('🔐 Initializing authentication...');
+        
         const isAuthenticated = AuthService.isAuthenticated();
+        const rememberMe = AuthService.getStorageType() === 'local';
+        
+        console.log('🔍 Auth check:', { isAuthenticated, rememberMe });
         
         if (isAuthenticated) {
           try {
+            console.log('📡 Fetching user profile...');
             const user = await AuthService.getProfile();
+            
+            console.log('✅ User authenticated:', user);
             set({
               user,
               isAuthenticated: true,
               error: null,
+              rememberMe,
             });
           } catch (error) {
+            console.log('❌ Profile fetch failed, clearing auth state:', error);
             // If profile fetch fails, clear auth state
             set({
               user: null,
               isAuthenticated: false,
               error: null,
+              rememberMe: false,
             });
             AuthService.logout();
           }
         } else {
+          console.log('❌ No valid tokens found');
           set({
             user: null,
             isAuthenticated: false,
             error: null,
+            rememberMe: false,
           });
         }
       },
@@ -204,13 +222,20 @@ const useAuthStore = create(
       setLoading: (loading) => {
         set({ isLoading: loading });
       },
+
+      /**
+       * Set remember me state
+       */
+      setRememberMe: (rememberMe) => {
+        set({ rememberMe });
+      },
     }),
     {
       name: 'auth-storage', // localStorage key
       partialize: (state) => ({
-        // Only persist these fields
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
+        // Only persist rememberMe, NOT user or isAuthenticated
+        // This forces re-authentication on app restart
+        rememberMe: state.rememberMe,
       }),
     }
   )
