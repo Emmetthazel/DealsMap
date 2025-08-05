@@ -8,6 +8,8 @@ import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import PrivateRoute from './components/PrivateRoute';
 import AuthService from './services/AuthService';
+import VerifyEmail from './pages/VerifyEmail';
+import VerifyEmailInfo from './pages/VerifyEmailInfo';
 
 // Placeholder Dashboard component
 const Dashboard = () => {
@@ -68,10 +70,10 @@ const Dashboard = () => {
               <p className="text-gray-600 mb-4">
                 Bienvenue sur DealsMap! Votre tableau de bord sera bientôt disponible.
               </p>
-              <div className="text-sm text-gray-500">
+              {/* <div className="text-sm text-gray-500">
                 <p>Type de stockage: <strong>{storageType === 'local' ? 'localStorage (Persistant)' : 'sessionStorage (Session)'}</strong></p>
                 <p>Se souvenir de moi: <strong>{rememberMe ? 'Activé' : 'Désactivé'}</strong></p>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -102,11 +104,11 @@ const App = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        console.log('🚀 Starting app initialization...');
+        console.log('Starting app initialization...');
         await initializeAuth();
-        console.log('✅ App initialization complete');
+        console.log('App initialization complete');
       } catch (error) {
-        console.error('❌ App initialization failed:', error);
+        console.error('App initialization failed:', error);
       } finally {
         setIsInitializing(false);
       }
@@ -126,6 +128,8 @@ const App = () => {
         {/* Public routes */}
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<RegisterForm />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-email-info" element={<VerifyEmailInfo />} />
         
         {/* Protected routes */}
         <Route 

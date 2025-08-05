@@ -7,6 +7,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.urls import reverse
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
 
 from .models import User
 from .serializers import (
@@ -15,6 +20,20 @@ from .serializers import (
     UserProfileSerializer,
     PasswordChangeSerializer
 )
+
+
+def send_verification_email(user, request):
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    verify_url = request.build_absolute_uri(
+        reverse('authentication:verify_email') + f'?uid={uid}&token={token}'
+    )
+    send_mail(
+        'Vérifiez votre email',
+        f'Cliquez ici pour vérifier votre compte: {verify_url}',
+        'no-reply@dealsmap.com',
+        [user.email],
+    )
 
 
 class UserRegistrationView(APIView):
@@ -27,7 +46,8 @@ class UserRegistrationView(APIView):
         serializer = UserRegistrationSerializer(data=request.data) # Vérifie si les données sont valides
         if serializer.is_valid():
             user = serializer.save()
-            
+            send_verification_email(user, request)  # <-- Add this line
+
             # Générer les tokens JWT
             refresh = RefreshToken.for_user(user)
             
@@ -191,3 +211,23 @@ def verify_user(request):
         return Response({
             'error': 'Utilisateur non trouvé'
         }, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def verify_email(request):
+    """
+    Endpoint pour vérifier l'email de l'utilisateur via le lien envoyé par email.
+    """
+    uidb64 = request.GET.get('uid')
+    token = request.GET.get('token')
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return Response({'error': 'Lien invalide'}, status=400)
+    if default_token_generator.check_token(user, token):
+        user.is_verified = True
+        user.save()
+        return Response({'message': 'Email vérifié avec succès!'})
+    return Response({'error': 'Lien invalide ou expiré'}, status=400)

@@ -105,10 +105,9 @@ const RegisterForm = () => {
     
     try {
       await register(formData);
-      toast.success('Inscription réussie!');
-      navigate('/dashboard'); // Redirect to dashboard after successful registration
+      toast.success('Inscription réussie ! Vérifiez votre email.');
+      navigate('/verify-email-info'); // <-- change this line
     } catch (error) {
-      // Error is handled by the store
       toast.error(error.message);
     }
   };
@@ -410,4 +409,4 @@ const RegisterForm = () => {
   );
 };
 
-export default RegisterForm; 
+export default RegisterForm;

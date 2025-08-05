@@ -89,6 +89,9 @@ class UserLoginSerializer(serializers.Serializer):
             if not user.is_active:
                 raise serializers.ValidationError("Ce compte est désactivé.")
             
+            if not user.is_verified:
+                raise serializers.ValidationError("Veuillez vérifier votre email avant de vous connecter.")
+            
             attrs['user'] = user
         else:
             raise serializers.ValidationError("Le nom d'utilisateur/email et le mot de passe sont requis.")
@@ -141,4 +144,4 @@ class PasswordChangeSerializer(serializers.Serializer):
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("L'ancien mot de passe est incorrect.")
-        return value 
+        return value

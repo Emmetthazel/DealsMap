@@ -21,4 +21,5 @@ urlpatterns = [
     
     # Admin functions
     path('verify-user/', views.verify_user, name='verify_user'),
+    path('verify-email/', views.verify_email, name='verify_email'),
 ]
