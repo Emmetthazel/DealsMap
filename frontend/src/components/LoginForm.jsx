@@ -165,8 +165,12 @@ const LoginForm = () => {
               <span className="ml-2 text-sm text-gray-600">Se souvenir de moi</span>
             </label>
             <Link
-              to="/forgot-password"
+              to="#"
               className="text-sm text-blue-600 hover:text-blue-500"
+              onClick={e => {
+                e.preventDefault();
+                alert("Pas encore implémenté");
+              }}
             >
               Mot de passe oublié ?
             </Link>
@@ -212,6 +216,7 @@ const LoginForm = () => {
           <button
             type="button"
             className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={() => alert("Pas encore implémenté")}
           >
             <i className="fab fa-facebook-f mr-2 text-blue-600"></i>
             Continuer avec Facebook
@@ -220,6 +225,7 @@ const LoginForm = () => {
           <button
             type="button"
             className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={() => alert("Pas encore implémenté")}
           >
             <i className="fab fa-google mr-2 text-red-600"></i>
             Continuer avec Google
@@ -240,4 +246,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm; 
+export default LoginForm;
