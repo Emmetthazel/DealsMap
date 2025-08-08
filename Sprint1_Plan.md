@@ -50,11 +50,11 @@ Créer les fondations solides avec authentification complète, gestion des caté
 #### Backend :
 
 - [X] Créer app `categories`
-- [ ] Modèle `Category` avec `parent = models.ForeignKey('self', ...)`
-- [ ] Champs : `name`, `slug`, `icon`, `color`
-- [ ] API avec ViewSet + nested serializer
-- [ ] Ajouter cache Redis (optionnel)
-- [ ] Créer des fixtures (base de données de test)
+- [X] Modèle `Category` avec `parent = models.ForeignKey('self', ...)`
+- [X] Champs : `name`, `slug`, `icon`, `color`
+- [X] API avec ViewSet + nested serializer
+- [X] Ajouter cache Redis (optionnel)
+- [X] Créer des fixtures (base de données de test)
 
 #### Frontend :
 
