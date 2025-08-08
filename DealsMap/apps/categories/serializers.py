@@ -14,7 +14,8 @@ class CategorySerializer(serializers.ModelSerializer):
             'color',
             'description',
             'parent', 
-            'children'
+            'children',
+            'is_active'
         ]
 
     def get_children(self, obj):

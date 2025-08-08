@@ -1,11 +1,18 @@
-import React from 'react'
+// App.jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import CategoryPage from './pages/categoryPage';
 
-const App = () => {
+function App() {
   return (
-    <div>
-      <h1>Hello World</h1>
-    </div>
-  )
+    <Router>
+      <Routes>
+        <Route path="/" element={<div>Bienvenue sur l'accueil</div>} />
+        <Route path="/categories" element={<CategoryPage/>} />
+        {/* Autres routes... */}
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
