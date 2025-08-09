@@ -10,10 +10,11 @@ import PrivateRoute from './components/PrivateRoute';
 import AuthService from './services/AuthService';
 import VerifyEmail from './pages/VerifyEmail';
 import VerifyEmailInfo from './pages/VerifyEmailInfo';
+import CategoryPage from './pages/CategoryPage';
 
 // Placeholder Dashboard component
 const Dashboard = () => {
-  const { user, logout, rememberMe } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   
   const handleLogout = async () => {
@@ -70,10 +71,6 @@ const Dashboard = () => {
               <p className="text-gray-600 mb-4">
                 Bienvenue sur DealsMap! Votre tableau de bord sera bientôt disponible.
               </p>
-              {/* <div className="text-sm text-gray-500">
-                <p>Type de stockage: <strong>{storageType === 'local' ? 'localStorage (Persistant)' : 'sessionStorage (Session)'}</strong></p>
-                <p>Se souvenir de moi: <strong>{rememberMe ? 'Activé' : 'Désactivé'}</strong></p>
-              </div> */}
             </div>
           </div>
         </div>
@@ -98,15 +95,13 @@ const LoadingScreen = () => (
 );
 
 const App = () => {
-  const { initializeAuth, isAuthenticated } = useAuthStore();
+  const { initializeAuth } = useAuthStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     const initApp = async () => {
       try {
-        console.log('Starting app initialization...');
         await initializeAuth();
-        console.log('App initialization complete');
       } catch (error) {
         console.error('App initialization failed:', error);
       } finally {
@@ -130,7 +125,10 @@ const App = () => {
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/verify-email-info" element={<VerifyEmailInfo />} />
-        
+
+        {/* Category page */}
+        <Route path="/categories" element={<CategoryPage />} />
+
         {/* Protected routes */}
         <Route 
           path="/dashboard" 

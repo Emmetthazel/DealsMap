@@ -50,19 +50,19 @@ Créer les fondations solides avec authentification complète, gestion des caté
 #### Backend :
 
 - [X] Créer app `categories`
-- [ ] Modèle `Category` avec `parent = models.ForeignKey('self', ...)`
-- [ ] Champs : `name`, `slug`, `icon`, `color`
-- [ ] API avec ViewSet + nested serializer
-- [ ] Ajouter cache Redis (optionnel)
-- [ ] Créer des fixtures (base de données de test)
+- [X] Modèle `Category` avec `parent = models.ForeignKey('self', ...)`
+- [X] Champs : `name`, `slug`, `icon`, `color`
+- [X] API avec ViewSet + nested serializer
+- [X] Ajouter cache Redis pour categories
+- [X] Créer des fixtures (base de données de test)
 
 #### Frontend :
 
-- [ ] Composant `CategoryPicker.jsx`
-- [ ] Récupérer la structure nested via API
-- [ ] Affichage hiérarchique
-- [ ] Gérer les erreurs / loading
-- [ ] Mettre en cache (Zustand ou localStorage)
+- [X] Composant `CategoryPicker.jsx`
+- [X] Récupérer la structure nested via API
+- [X] Affichage hiérarchique
+- [X] Gérer les erreurs / loading
+- [X] Mettre en cache (Zustand ou localStorage)
 
 ---
 
