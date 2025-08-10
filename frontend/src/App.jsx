@@ -10,12 +10,20 @@ import PrivateRoute from './components/PrivateRoute';
 import AuthService from './services/AuthService';
 import VerifyEmail from './pages/VerifyEmail';
 import VerifyEmailInfo from './pages/VerifyEmailInfo';
-import CategoryPage from './pages/CategoryPage';
+import HierarchicalCategorySelector from './components/HierarchicalCategorySelector';
+import { useCategoryStore } from './store/categoryStore';
+
 
 // Placeholder Dashboard component
 const Dashboard = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const { categories, loading, error, fetchAllCategories } = useCategoryStore();
+  
+  // Récupérer les catégories depuis l'API au chargement du composant
+  React.useEffect(() => {
+    fetchAllCategories();
+  }, [fetchAllCategories]);
   
   const handleLogout = async () => {
     try {
@@ -62,16 +70,41 @@ const Dashboard = () => {
       </nav>
       
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {/* Sélecteur de catégories hiérarchique au-dessus du tableau de bord */}
+        <div className="mb-6 px-4 sm:px-0">
+          <div className="w-[35%] bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-gray-600">Chargement des catégories...</span>
+              </div>
+            ) : error ? (
+              <div className="text-red-600 text-center py-4">
+                Erreur lors du chargement des catégories: {error}
+              </div>
+            ) : (
+              <HierarchicalCategorySelector
+                categories={categories}
+                onSelect={(category) => {
+                  console.log("Catégorie sélectionnée:", category);
+                  // Ici vous pouvez ajouter la logique de filtrage du tableau de bord
+                }}
+                selectedCategories={null}
+                multiple={false}
+                placeholder="Choisir une catégorie pour filtrer..."
+                className="w-full"
+              />
+            )}
+          </div>
+        </div>
+
+
+        
         <div className="px-4 py-6 sm:px-0">
           <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Tableau de bord
-              </h2>
-              <p className="text-gray-600 mb-4">
-                Bienvenue sur DealsMap! Votre tableau de bord sera bientôt disponible.
-              </p>
-            </div>
+            <p className="text-gray-500 text-lg">
+              Contenu du tableau de bord à venir...
+            </p>
           </div>
         </div>
       </main>
@@ -127,7 +160,7 @@ const App = () => {
         <Route path="/verify-email-info" element={<VerifyEmailInfo />} />
 
         {/* Category page */}
-        <Route path="/categories" element={<CategoryPage />} />
+        {/* <Route path="/categories" element={<CategoryPage />} /> */}
 
         {/* Protected routes */}
         <Route 
