@@ -10,6 +10,8 @@ def home(request):
     return HttpResponse("Bienvenue sur DealsMap backend!")
 
 urlpatterns = [
+    path('', home),
+
     path('admin/', admin.site.urls),
     
     # API endpoints
