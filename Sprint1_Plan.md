@@ -72,12 +72,12 @@ Créer les fondations solides avec authentification complète, gestion des caté
 
 - [X] Tests unitaires `User` model + validations
 - [X] Tests API auth : register/login/refresh/logout
-- [ ] Tests model `Category` + API
+- [X] Tests model `Category` + API
 
 ### Frontend :
 
 - [X] Tester `LoginForm` et `RegisterForm` (React Testing Library)
-- [ ] Tester `CategoryPicker`
+- [X] Tester `CategoryPicker`
 - [ ] Couverture visée : **> 80%**
 
 ---
