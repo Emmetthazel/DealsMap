@@ -1,3 +1,2 @@
-from django.shortcuts import render
-
-# Create your views here.
+# Views will be implemented in future sprints
+# This file is kept for future use
