@@ -1,8 +1,11 @@
 from django.db import models
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import D
+from django.contrib.gis.db.models.functions import Distance
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
+import os
 
 User = get_user_model()
 
@@ -28,6 +31,15 @@ class Business(models.Model):
         default=dict,
         verbose_name="Opening Hours",
         help_text="JSON format: {'monday': {'open': '09:00', 'close': '18:00'}, ...}"
+    )
+    
+    # Business image
+    image = models.ImageField(
+        upload_to='businesses/',
+        null=True,
+        blank=True,
+        verbose_name="Business Image",
+        help_text="Upload a photo of your business"
     )
     
     # Status fields
@@ -99,13 +111,58 @@ class Business(models.Model):
     def get_nearby(self, lat, lng, radius_km=10):
         """
         Get nearby businesses within specified radius
-        This will be implemented in Day 2
+        Returns queryset of businesses within the specified radius
         """
-        pass
+        if not self.location:
+            return Business.objects.none()
+        
+        # Create a point from the given coordinates
+        search_point = Point(lng, lat, srid=4326)
+        
+        # Find businesses within the specified radius
+        nearby_businesses = Business.objects.filter(
+            location__distance_lte=(search_point, D(km=radius_km)),
+            is_active=True
+        ).annotate(
+            distance=Distance('location', search_point)
+        ).order_by('distance')
+        
+        return nearby_businesses
     
     def calculate_distance(self, lat, lng):
         """
         Calculate distance to a point
-        This will be implemented in Day 2
+        Returns distance in kilometers
         """
-        pass
+        if not self.location:
+            return None
+        
+        # Create a point from the given coordinates
+        search_point = Point(lng, lat, srid=4326)
+        
+        # Calculate distance
+        distance = self.location.distance(search_point)
+        
+        # Convert to kilometers (distance is in degrees, roughly 111km per degree)
+        distance_km = distance * 111.32
+        
+        return round(distance_km, 2)
+    
+    @classmethod
+    def find_nearby_businesses(cls, lat, lng, radius_km=10, category=None):
+        """
+        Class method to find nearby businesses from any point
+        """
+        search_point = Point(lng, lat, srid=4326)
+        
+        queryset = cls.objects.filter(
+            location__distance_lte=(search_point, D(km=radius_km)),
+            is_active=True
+        ).annotate(
+            distance=Distance('location', search_point)
+        ).order_by('distance')
+        
+        if category:
+            queryset = queryset.filter(category=category)
+        
+        return queryset

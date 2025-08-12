@@ -16,6 +16,10 @@ class BusinessAdmin(admin.ModelAdmin):
         ('Basic Information', {
             'fields': ('name', 'address', 'city', 'postal_code', 'category')
         }),
+        ('Business Image', {
+            'fields': ('image',),
+            'description': 'Upload a photo of your business'
+        }),
         ('Location', {
             'fields': ('location',),
             'description': 'Click on the map to set the business location'

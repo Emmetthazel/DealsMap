@@ -45,8 +45,8 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Configurer l’upload d’images pour les établissements (**Pillow**).
-- [ ] Méthodes custom dans le modèle :
+- [X] Configurer l’upload d’images pour les établissements (**Pillow**).
+- [X] Méthodes custom dans le modèle :
   - `get_nearby(lat, lng, radius)`.
   - `calculate_distance(lat, lng)`.
 
@@ -60,7 +60,7 @@
 
 **Validation :**
 
-- [ ] Upload d’images fonctionnel et stocké au bon endroit.
+- [X] Upload d’images fonctionnel et stocké au bon endroit.
 - [ ] Erreurs levées si contraintes non respectées.
 
 ---
