@@ -7,6 +7,19 @@ import './index.css'
 import './utils/storageTest.js'
 import './utils/authTest.js'
 
+// // Clear any stale authentication tokens on app startup
+// const clearStaleTokens = () => {
+//   const storageKeys = ['access_token', 'refresh_token', 'auth_storage_type'];
+//   storageKeys.forEach(key => {
+//     localStorage.removeItem(key);
+//     sessionStorage.removeItem(key);
+//   });
+//   console.log('Cleared stale authentication tokens');
+// };
+
+// // Clear tokens on startup
+// clearStaleTokens();
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

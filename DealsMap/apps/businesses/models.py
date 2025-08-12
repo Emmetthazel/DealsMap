@@ -46,7 +46,7 @@ class Business(models.Model):
         verbose_name="Owner"
     )
     
-    # Category relationship (assuming you have a Category model)
+    # Category relationship
     category = models.ForeignKey(
         'categories.Category',
         on_delete=models.SET_NULL,
