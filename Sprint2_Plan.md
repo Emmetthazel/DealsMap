@@ -16,13 +16,13 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Configurer **PostGIS** dans Django.
-- [ ] Créer le modèle `Business` :
+- [X] Configurer **PostGIS** dans Django.
+- [X] Créer le modèle `Business` :
   - `name`, `address`, `city`, `postal_code`.
   - `location` (PointField SRID 4326).
   - `opening_hours` (JSONField).
   - `is_active`, `is_verified`.
-- [ ] Créer un **index spatial** sur `location`.
+- [X] Créer un **index spatial** sur `location`.
 
 #### Zineb – Deals
 
@@ -35,8 +35,8 @@
 
 **Validation :**
 
-- [ ] Les migrations s’exécutent correctement.
-- [ ] Données insérables via Django Admin.
+- [X] Les migrations s’exécutent correctement.
+- [X] Données insérables via Django Admin.
 - [ ] La relation Business → Deal fonctionne.
 
 ---
