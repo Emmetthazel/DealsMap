@@ -69,7 +69,7 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Créer l’endpoint `/api/businesses/nearby/` :
+- [X] Créer l’endpoint `/api/businesses/nearby/` :
   - Filtres : `category`, `distance`, `rating`.
   - Pagination optimisée.
 
@@ -81,9 +81,9 @@
 
 **Validation :**
 
-- [ ] Endpoints renvoient les bonnes données.
-- [ ] Requêtes avec paramètres (`lat`, `lng`, `radius`) fonctionnelles.
-- [ ] Pagination correcte.
+- [X] Endpoints renvoient les bonnes données.
+- [X] Requêtes avec paramètres (`lat`, `lng`, `radius`) fonctionnelles.
+- [X] Pagination correcte.
 
 ---
 

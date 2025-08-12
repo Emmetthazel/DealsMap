@@ -25,6 +25,9 @@ urlpatterns = [
     
     # categories app URLs
     path('api/', include('apps.categories.urls')),
+    
+    # businesses app URLs
+    path('api/', include('apps.businesses.urls')),
 ]
 
 # Serve media files during development
