@@ -26,18 +26,18 @@
 
 #### Zineb – Deals
 
-- [ ] Créer le modèle `Deal` lié à `Business` (ForeignKey).
-- [ ] Champs :
+- [X] Créer le modèle `Deal` lié à `Business` (ForeignKey).
+- [X] Champs :
   - `original_price`, `deal_price`, `discount_percentage`.
   - `max_uses`, `current_uses`.
   - `start_date`, `end_date`.
-- [ ] Contraintes par défaut sur les dates.
+- [X] Contraintes par défaut sur les dates.
 
 **Validation :**
 
 - [X] Les migrations s’exécutent correctement.
 - [X] Données insérables via Django Admin.
-- [ ] La relation Business → Deal fonctionne.
+- [X] La relation Business → Deal fonctionne.
 
 ---
 
