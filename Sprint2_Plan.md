@@ -113,8 +113,8 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Intégrer `/nearby` API dans la recherche frontend.
-- [ ] Ajouter `StatsCards` pour établissements (deals actifs, vues).
+- [X] Intégrer `/nearby` API dans la recherche frontend.
+- [X] Ajouter `StatsCards` pour établissements (deals actifs, vues).
 
 #### Zineb – Deals
 
