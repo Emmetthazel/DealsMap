@@ -91,10 +91,10 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Frontend : Créer `BusinessForm` :
+- [X] Frontend : Créer `BusinessForm` :
   - Informations, horaires, upload d’images avec aperçu.
-- [ ] Implémenter `BusinessService` (CRUD + images).
-- [ ] Implémenter `GeoService` (géolocalisation + calculs de distance).
+- [X] Implémenter `BusinessService` (CRUD + images).
+- [X] Implémenter `GeoService` (géolocalisation + calculs de distance).
 
 #### Zineb – Deals
 
@@ -104,8 +104,8 @@
 
 **Validation :**
 
-- [ ] Sauvegarde correcte des formulaires.
-- [ ] Validation côté client empêche les données invalides.
+- [X] Sauvegarde correcte des formulaires.
+- [X] Validation côté client empêche les données invalides.
 
 ---
 
