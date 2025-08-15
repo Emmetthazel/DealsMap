@@ -23,4 +23,7 @@ urlpatterns = [
     
     # categories app URLs
     path('api/', include('apps.categories.urls')),
+    
+    # deals app URLs
+    path('api/', include('apps.deals.urls')),
 ]
