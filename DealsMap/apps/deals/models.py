@@ -46,7 +46,7 @@ class Deal(models.Model):
     
     # Image
     image = models.ImageField(
-        upload_to='deals/images/',
+        upload_to='deals/images/%Y/%m/%d/',
         null=True,
         blank=True,
         verbose_name="Deal Image"

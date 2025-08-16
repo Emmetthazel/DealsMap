@@ -32,9 +32,19 @@ class DealAdmin(admin.ModelAdmin):
         'days_remaining', 'remaining_uses'
     ]
     
+    def get_image_preview(self, obj):
+        """Display image preview in admin"""
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height: 100px; max-width: 100px;" />',
+                obj.image.url
+            )
+        return "No image"
+    get_image_preview.short_description = 'Image Preview'
+    
     fieldsets = (
         ('Basic Information', {
-            'fields': ('title', 'description', 'business', 'image')
+            'fields': ('title', 'description', 'business', 'image', 'get_image_preview')
         }),
         ('Pricing', {
             'fields': ('original_price', 'deal_price', 'discount_percentage')
