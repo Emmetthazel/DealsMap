@@ -17,6 +17,7 @@ const NearbySearch = ({ onBusinessSelect = null }) => {
   const [error, setError] = useState('');
   const [currentLocation, setCurrentLocation] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [cacheInfo, setCacheInfo] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -27,7 +28,25 @@ const NearbySearch = ({ onBusinessSelect = null }) => {
 
   useEffect(() => {
     loadCategories();
+    loadCacheInfo();
   }, []);
+
+  const loadCacheInfo = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/businesses/cache/clear/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCacheInfo(data.cache_info);
+      }
+    } catch (error) {
+      console.error('Failed to load cache info:', error);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -191,11 +210,19 @@ const NearbySearch = ({ onBusinessSelect = null }) => {
 
   return (
     <div className="space-y-6">
-      {/* Search Form */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          🔍 Search Nearby Businesses
-        </h2>
+             {/* Search Form */}
+       <div className="bg-white rounded-lg shadow-md p-6">
+         <div className="flex items-center justify-between mb-4">
+           <h2 className="text-xl font-semibold text-gray-900">
+             🔍 Search Nearby Businesses
+           </h2>
+           {cacheInfo && (
+             <div className="flex items-center space-x-2 text-sm text-gray-600">
+               <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+               <span>Redis Cache Active</span>
+             </div>
+           )}
+         </div>
         
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -373,10 +400,38 @@ const NearbySearch = ({ onBusinessSelect = null }) => {
               </p>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+                 </div>
+       )}
+
+       {/* Cache Management */}
+       {cacheInfo && (
+         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+           <h3 className="text-lg font-medium text-blue-800 mb-2">
+             🚀 Performance Optimization (Jour 6)
+           </h3>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div>
+               <h4 className="font-medium text-blue-700 mb-1">Redis Cache Status</h4>
+               <p className="text-sm text-blue-600">
+                 Backend: {cacheInfo.backend || 'Unknown'}<br/>
+                 Location: {cacheInfo.location || 'Unknown'}<br/>
+                 Timeout: {cacheInfo.timeout || 'Configurable'}
+               </p>
+             </div>
+             <div>
+               <h4 className="font-medium text-blue-700 mb-1">Cache Benefits</h4>
+               <ul className="text-sm text-blue-600 space-y-1">
+                 <li>• ⚡ Faster repeated searches</li>
+                 <li>• 📊 Reduced database load</li>
+                 <li>• 🔄 Automatic cache invalidation</li>
+                 <li>• 📱 Improved mobile performance</li>
+               </ul>
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+   );
+ };
 
 export default NearbySearch;

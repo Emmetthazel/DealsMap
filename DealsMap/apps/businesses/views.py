@@ -9,9 +9,12 @@ from django.contrib.gis.db.models.functions import Distance
 from django_filters.rest_framework import DjangoFilterBackend
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count
+from django.core.cache import cache
+import time
 
 from .models import Business
 from .serializers import BusinessSerializer, BusinessDetailSerializer
+from .cache import cache_nearby_search, invalidate_nearby_cache, CacheManager
 
 
 class BusinessViewSet(viewsets.ModelViewSet):
@@ -45,7 +48,28 @@ class BusinessViewSet(viewsets.ModelViewSet):
         
         return queryset
 
+    def perform_create(self, serializer):
+        """Override to invalidate cache after creating a business"""
+        business = serializer.save()
+        # Invalidate nearby cache since new business might appear in nearby searches
+        invalidate_nearby_cache()
+        return business
+
+    def perform_update(self, serializer):
+        """Override to invalidate cache after updating a business"""
+        business = serializer.save()
+        # Invalidate nearby cache since business data changed
+        invalidate_nearby_cache()
+        return business
+
+    def perform_destroy(self, instance):
+        """Override to invalidate cache after deleting a business"""
+        # Invalidate nearby cache since business was removed
+        invalidate_nearby_cache()
+        instance.delete()
+
     @action(detail=False, methods=['get'], url_path='nearby')
+    @cache_nearby_search(timeout=300)  # Cache for 5 minutes
     def nearby(self, request):
         """
         Find nearby businesses with filters
@@ -193,3 +217,32 @@ class BusinessViewSet(viewsets.ModelViewSet):
             'from_lng': lng,
             'distance_km': distance
         })
+
+    @action(detail=False, methods=['get', 'post'], url_path='cache/clear')
+    def clear_cache(self, request):
+        """
+        Clear cache endpoints
+        GET: Get cache information
+        POST: Clear all cache or specific cache
+        """
+        if request.method == 'GET':
+            cache_info = CacheManager.get_cache_info()
+            return Response({
+                'cache_info': cache_info,
+                'message': 'Use POST to clear cache'
+            })
+        
+        elif request.method == 'POST':
+            cache_type = request.data.get('type', 'all')
+            
+            if cache_type == 'nearby':
+                result = CacheManager.clear_nearby_cache()
+            elif cache_type == 'all':
+                result = CacheManager.clear_all_cache()
+            else:
+                return Response(
+                    {'error': 'Invalid cache type. Use "nearby" or "all"'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            return Response(result)

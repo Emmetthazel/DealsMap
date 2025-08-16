@@ -61,7 +61,7 @@
 **Validation :**
 
 - [X] Upload d’images fonctionnel et stocké au bon endroit.
-- [ ] Erreurs levées si contraintes non respectées.
+- [X] Erreurs levées si contraintes non respectées.
 
 ---
 
@@ -123,7 +123,7 @@
 
 **Validation :**
 
-- [ ] Recherche renvoie bien les établissements proches.
+- [X] Recherche renvoie bien les établissements proches.
 - [ ] Statistiques mises à jour dynamiquement.
 
 ---
@@ -132,9 +132,9 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Ajouter **Redis cache** pour `/nearby`.
-- [ ] Optimiser états de chargement/erreur.
-- [ ] Rendre le tableau de bord responsive.
+- [X] Ajouter **Redis cache** pour `/nearby`.
+- [X] Optimiser états de chargement/erreur.
+- [X] Rendre le tableau de bord responsive.
 
 #### Zineb – Deals
 
