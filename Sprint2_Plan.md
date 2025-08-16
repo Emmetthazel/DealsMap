@@ -52,8 +52,8 @@
 
 #### Zineb – Deals
 
-- [ ] Configurer l’upload d’images pour les deals (dossier séparé).
-- [ ] Méthode `clean()` :
+- [X] Configurer l’upload d’images pour les deals (dossier séparé).
+- [X] Méthode `clean()` :
   - Valider durée ≤ 4 semaines.
   - Calcul automatique de `discount_percentage`.
   - Vérifier les limites d’utilisation.
@@ -75,7 +75,7 @@
 
 #### Zineb – Deals
 
-- [ ] Créer l’endpoint `/api/deals/` :
+- [X] Créer l’endpoint `/api/deals/` :
   - Filtres : `category`, `distance`.
   - Pagination optimisée.
 
@@ -124,7 +124,7 @@
 **Validation :**
 
 - [X] Recherche renvoie bien les établissements proches.
-- [ ] Statistiques mises à jour dynamiquement.
+- [X] Statistiques mises à jour dynamiquement.
 
 ---
 
@@ -143,8 +143,8 @@
 
 **Validation :**
 
-- [ ] Cache améliore la vitesse des requêtes récurrentes.
-- [ ] Interface utilisable sur mobile et desktop.
+- [X] Cache améliore la vitesse des requêtes récurrentes.
+- [X] Interface utilisable sur mobile et desktop.
 
 ---
 
