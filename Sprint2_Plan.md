@@ -52,16 +52,16 @@
 
 #### Zineb – Deals
 
-- [ ] Configurer l’upload d’images pour les deals (dossier séparé).
-- [ ] Méthode `clean()` :
+- [X] Configurer l’upload d’images pour les deals (dossier séparé).
+- [X] Méthode `clean()` :
   - Valider durée ≤ 4 semaines.
   - Calcul automatique de `discount_percentage`.
   - Vérifier les limites d’utilisation.
 
 **Validation :**
 
-- [ ] Upload d’images fonctionnel et stocké au bon endroit.
-- [ ] Erreurs levées si contraintes non respectées.
+- [X] Upload d’images fonctionnel et stocké au bon endroit.
+- [X] Erreurs levées si contraintes non respectées.
 
 ---
 
@@ -75,15 +75,15 @@
 
 #### Zineb – Deals
 
-- [ ] Créer l’endpoint `/api/deals/` :
+- [X] Créer l’endpoint `/api/deals/` :
   - Filtres : `category`, `distance`.
   - Pagination optimisée.
 
 **Validation :**
 
-- [ ] Endpoints renvoient les bonnes données.
-- [ ] Requêtes avec paramètres (`lat`, `lng`, `radius`) fonctionnelles.
-- [ ] Pagination correcte.
+- [X] Endpoints renvoient les bonnes données.
+- [X] Requêtes avec paramètres (`lat`, `lng`, `radius`) fonctionnelles.
+- [X] Pagination correcte.
 
 ---
 

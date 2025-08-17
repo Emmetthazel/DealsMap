@@ -144,3 +144,4 @@ if __name__ == '__main__':
     print("   3. Tester la recherche: GET /api/deals/search/?min_discount=20")
     print("   4. Se connecter à l'admin: test@dealsmap.com / test123")
 
+
