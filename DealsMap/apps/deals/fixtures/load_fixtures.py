@@ -145,3 +145,4 @@ if __name__ == '__main__':
     print("   4. Se connecter à l'admin: test@dealsmap.com / test123")
 
 
+
