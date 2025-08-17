@@ -45,8 +45,8 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Configurer l’upload d’images pour les établissements (**Pillow**).
-- [ ] Méthodes custom dans le modèle :
+- [X] Configurer l’upload d’images pour les établissements (**Pillow**).
+- [X] Méthodes custom dans le modèle :
   - `get_nearby(lat, lng, radius)`.
   - `calculate_distance(lat, lng)`.
 
@@ -69,7 +69,7 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Créer l’endpoint `/api/businesses/nearby/` :
+- [X] Créer l’endpoint `/api/businesses/nearby/` :
   - Filtres : `category`, `distance`, `rating`.
   - Pagination optimisée.
 
@@ -91,10 +91,10 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Frontend : Créer `BusinessForm` :
+- [X] Frontend : Créer `BusinessForm` :
   - Informations, horaires, upload d’images avec aperçu.
-- [ ] Implémenter `BusinessService` (CRUD + images).
-- [ ] Implémenter `GeoService` (géolocalisation + calculs de distance).
+- [X] Implémenter `BusinessService` (CRUD + images).
+- [X] Implémenter `GeoService` (géolocalisation + calculs de distance).
 
 #### Zineb – Deals
 
@@ -104,8 +104,8 @@
 
 **Validation :**
 
-- [ ] Sauvegarde correcte des formulaires.
-- [ ] Validation côté client empêche les données invalides.
+- [X] Sauvegarde correcte des formulaires.
+- [X] Validation côté client empêche les données invalides.
 
 ---
 
@@ -113,8 +113,8 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Intégrer `/nearby` API dans la recherche frontend.
-- [ ] Ajouter `StatsCards` pour établissements (deals actifs, vues).
+- [X] Intégrer `/nearby` API dans la recherche frontend.
+- [X] Ajouter `StatsCards` pour établissements (deals actifs, vues).
 
 #### Zineb – Deals
 
@@ -123,8 +123,8 @@
 
 **Validation :**
 
-- [ ] Recherche renvoie bien les établissements proches.
-- [ ] Statistiques mises à jour dynamiquement.
+- [X] Recherche renvoie bien les établissements proches.
+- [X] Statistiques mises à jour dynamiquement.
 
 ---
 
@@ -132,9 +132,9 @@
 
 #### **Abdelkhalek** – Établissements
 
-- [ ] Ajouter **Redis cache** pour `/nearby`.
-- [ ] Optimiser états de chargement/erreur.
-- [ ] Rendre le tableau de bord responsive.
+- [X] Ajouter **Redis cache** pour `/nearby`.
+- [X] Optimiser états de chargement/erreur.
+- [X] Rendre le tableau de bord responsive.
 
 #### Zineb – Deals
 
@@ -143,8 +143,8 @@
 
 **Validation :**
 
-- [ ] Cache améliore la vitesse des requêtes récurrentes.
-- [ ] Interface utilisable sur mobile et desktop.
+- [X] Cache améliore la vitesse des requêtes récurrentes.
+- [X] Interface utilisable sur mobile et desktop.
 
 ---
 

@@ -13,7 +13,6 @@ import VerifyEmailInfo from './pages/VerifyEmailInfo';
 import HierarchicalCategorySelector from './components/HierarchicalCategorySelector';
 import { useCategoryStore } from './store/categoryStore';
 
-
 // Placeholder Dashboard component
 const Dashboard = () => {
   const { user, logout } = useAuthStore();
