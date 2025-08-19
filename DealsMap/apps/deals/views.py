@@ -44,6 +44,11 @@ class DealViewSet(viewsets.ModelViewSet):
             return DealListSerializer
         return DealSerializer
     
+    @method_decorator(cache_page(60 * 5))  # Cache 5 minutes
+    def list(self, request, *args, **kwargs):
+        """List deals with caching"""
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         """Custom queryset with filtering"""
         queryset = super().get_queryset()

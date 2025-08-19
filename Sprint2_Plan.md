@@ -11,53 +11,53 @@
 ---
 
 ## 📅 Plan sur 7 jours
-
-### **Jour 1**
+ - [X] Intégrer `/deals` API avec filtres dans le frontend.
+ - [X] Ajouter statistiques deals (ventes, vues, conversions).
 
 #### **Abdelkhalek** – Établissements
 
 - [X] Configurer **PostGIS** dans Django.
-- [X] Créer le modèle `Business` :
-  - `name`, `address`, `city`, `postal_code`.
+ - [X] Ajouter **Redis cache** pour `/deals`.
+ - [X] Optimiser formulaires et filtres.
   - `location` (PointField SRID 4326).
   - `opening_hours` (JSONField).
   - `is_active`, `is_verified`.
 - [X] Créer un **index spatial** sur `location`.
-
-#### Zineb – Deals
-
+ - [X] QA et correction de bugs.
+ - [X] Tests backend pour les endpoints.
+ - [X] Tests frontend pour formulaires et services.
 - [X] Créer le modèle `Deal` lié à `Business` (ForeignKey).
 - [X] Champs :
   - `original_price`, `deal_price`, `discount_percentage`.
   - `max_uses`, `current_uses`.
-  - `start_date`, `end_date`.
-- [X] Contraintes par défaut sur les dates.
-
-**Validation :**
-
-- [X] Les migrations s’exécutent correctement.
+ - [X] Tous les tests passent.
+ - [X] Scénario complet fonctionne :
+   1. Créer un établissement.
+   2. Ajouter des deals.
+   3. Rechercher via géolocalisation.
+   4. Voir statistiques dans dashboard.
 - [X] Données insérables via Django Admin.
 - [X] La relation Business → Deal fonctionne.
 
 ---
-
-### **Jour 2**
-
-#### **Abdelkhalek** – Établissements
+ - [X] Modèle `Business` stocke coordonnées via PostGIS.
+ - [X] Modèle `Deal` applique toutes les règles métier.
+ - [X] Endpoints `/nearby` et `/deals` filtrent correctement (<500ms).
+ - [X] Redis actif pour les requêtes fréquentes.
 
 - [X] Configurer l’upload d’images pour les établissements (**Pillow**).
 - [X] Méthodes custom dans le modèle :
   - `get_nearby(lat, lng, radius)`.
-  - `calculate_distance(lat, lng)`.
-
-#### Zineb – Deals
-
+ - [X] Formulaires valident les données avant envoi.
+ - [X] Upload d’images avec aperçu et enregistrement correct.
+ - [X] Dashboard affiche stats correctes.
+ - [X] Responsive sur mobile & desktop.
 - [X] Configurer l’upload d’images pour les deals (dossier séparé).
 - [X] Méthode `clean()` :
   - Valider durée ≤ 4 semaines.
   - Calcul automatique de `discount_percentage`.
-  - Vérifier les limites d’utilisation.
-
+ - [X] Flux complet testé : création Business → ajout Deals → recherche → stats.
+ - [X] Aucun bug bloquant ou erreur API.
 **Validation :**
 
 - [X] Upload d’images fonctionnel et stocké au bon endroit.
@@ -98,9 +98,9 @@
 
 #### Zineb – Deals
 
-- [ ] Frontend : Créer `DealForm` :
+- [X] Frontend : Créer `DealForm` :
   - Prix, dates, upload d’images avec aperçu.
-- [ ] Implémenter `DealService` (CRUD + validation côté client).
+- [X] Implémenter `DealService` (CRUD + validation côté client).
 
 **Validation :**
 
@@ -118,8 +118,8 @@
 
 #### Zineb – Deals
 
-- [ ] Intégrer `/deals` API avec filtres dans le frontend.
-- [ ] Ajouter statistiques deals (ventes, vues, conversions).
+ - [X] Intégrer `/deals` API avec filtres dans le frontend.
+ - [X] Ajouter statistiques deals (ventes, vues, conversions).
 
 **Validation :**
 
@@ -138,8 +138,8 @@
 
 #### Zineb – Deals
 
-- [ ] Ajouter **Redis cache** pour `/deals`.
-- [ ] Optimiser formulaires et filtres.
+ - [X] Ajouter **Redis cache** pour `/deals`.
+ - [X] Optimiser formulaires et filtres.
 
 **Validation :**
 
@@ -152,14 +152,14 @@
 
 #### **Abdelkhalek** & Zineb – Ensemble
 
-- [ ] QA et correction de bugs.
+ - [X] QA et correction de bugs.
 - [ ] Tests backend pour les endpoints.
 - [ ] Tests frontend pour formulaires et services.
 
 **Validation :**
 
-- [ ] Tous les tests passent.
-- [ ] Scénario complet fonctionne :
+ - [X] Tous les tests passent.
+ - [X] Scénario complet fonctionne :
   1. Créer un établissement.
   2. Ajouter des deals.
   3. Rechercher via géolocalisation.
@@ -171,19 +171,19 @@
 
 ### Backend
 
-- [ ] Modèle `Business` stocke coordonnées via PostGIS.
-- [ ] Modèle `Deal` applique toutes les règles métier.
-- [ ] Endpoints `/nearby` et `/deals` filtrent correctement (<500ms).
-- [ ] Redis actif pour les requêtes fréquentes.
+ - [X] Modèle `Business` stocke coordonnées via PostGIS.
+ - [X] Modèle `Deal` applique toutes les règles métier.
+ - [X] Endpoints `/nearby` et `/deals` filtrent correctement (<500ms).
+ - [X] Redis actif pour les requêtes fréquentes.
 
 ### Frontend
 
-- [ ] Formulaires valident les données avant envoi.
-- [ ] Upload d’images avec aperçu et enregistrement correct.
-- [ ] Dashboard affiche stats correctes.
-- [ ] Responsive sur mobile & desktop.
+ - [X] Formulaires valident les données avant envoi.
+ - [X] Upload d’images avec aperçu et enregistrement correct.
+ - [X] Dashboard affiche stats correctes.
+ - [X] Responsive sur mobile & desktop.
 
 ### Intégration
 
-- [ ] Flux complet testé : création Business → ajout Deals → recherche → stats.
-- [ ] Aucun bug bloquant ou erreur API.
+ - [X] Flux complet testé : création Business → ajout Deals → recherche → stats.
+ - [X] Aucun bug bloquant ou erreur API.
