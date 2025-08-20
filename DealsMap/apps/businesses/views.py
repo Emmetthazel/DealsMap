@@ -180,6 +180,31 @@ class BusinessViewSet(viewsets.ModelViewSet):
         
         return Response(response_data)
 
+    @action(detail=False, methods=['get'], url_path='my-businesses')
+    def my_businesses(self, request):
+        """
+        Get businesses owned by the current authenticated user
+        """
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Filter businesses owned by the current user
+        queryset = Business.objects.filter(
+            owner=request.user,
+            is_active=True
+        ).select_related('category')
+        
+        # Serialize results
+        serializer = self.get_serializer(queryset, many=True)
+        
+        return Response({
+            'count': queryset.count(),
+            'results': serializer.data
+        })
+
     @action(detail=True, methods=['get'], url_path='distance')
     def distance(self, request, pk=None):
         """

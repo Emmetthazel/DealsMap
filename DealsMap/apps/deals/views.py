@@ -59,7 +59,7 @@ class DealViewSet(viewsets.ModelViewSet):
         return queryset
     
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='nearby')
     def nearby(self, request):
         """
         Get deals near a specific location with distance filtering
@@ -111,7 +111,7 @@ class DealViewSet(viewsets.ModelViewSet):
         serializer = DealListSerializer(queryset, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='my-deals')
     def my_deals(self, request):
         """
         Get deals for businesses owned by the authenticated user
@@ -142,7 +142,7 @@ class DealViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @method_decorator(cache_page(60 * 3))  # Cache for 3 minutes
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='search')
     def search(self, request):
         """
         Advanced search with multiple filters
@@ -251,7 +251,7 @@ class DealViewSet(viewsets.ModelViewSet):
                 )['avg'] or 0,
                 'total_savings': user_deals.aggregate(
                     savings=Sum(
-                        models.F('original_price') - models.F('deal_price')
+                        F('original_price') - F('deal_price')
                     )
                 )['savings'] or 0
             }

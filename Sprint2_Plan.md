@@ -159,7 +159,7 @@
 **Validation :**
 
 - [X] Tous les tests passent.
-- [ ] Scénario complet fonctionne :
+- [X] Scénario complet fonctionne :
   1. Créer un établissement.
   2. Ajouter des deals.
   3. Rechercher via géolocalisation.

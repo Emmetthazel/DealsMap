@@ -27,27 +27,7 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
   const [categories, setCategories] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
 
-  // Load categories on component mount
-  useEffect(() => {
-    loadCategories();
-    if (showNearby) {
-      getUserLocation();
-    }
-  }, [showNearby]);
-
-  // Load deals when component mounts or filters change
-  useEffect(() => {
-    if (showNearby) {
-      loadNearbyDeals();
-    } else {
-      loadDeals();
-    }
-  }, [showNearby, loadNearbyDeals, loadDeals]);
-
-  useEffect(() => {
-    loadDeals();
-  }, [loadDeals]);
-
+  // Define all callback functions first
   const loadCategories = async () => {
     try {
       const categoriesData = await DealService.getDealCategories();
@@ -79,11 +59,14 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
   const loadDeals = useCallback(async () => {
     setLoading(true);
     setError(null);
+    
+    console.log('🔄 Loading deals...', { showMyDeals, showNearby, filters });
 
     try {
       let dealsData;
 
       if (showNearby && userLocation) {
+        console.log('📍 Loading nearby deals...');
         dealsData = await DealService.getNearbyDeals(
           userLocation.latitude,
           userLocation.longitude,
@@ -91,13 +74,17 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
           filters.category
         );
       } else if (showMyDeals) {
+        console.log('👤 Loading my deals...');
         dealsData = await DealService.getMyDeals(filters.status);
       } else {
+        console.log('🔍 Loading all deals...');
         dealsData = await DealService.searchDeals({
           ...filters,
           page: pagination.current_page
         });
       }
+      
+      console.log('✅ Deals loaded:', dealsData);
 
       if (dealsData.results) {
         setDeals(dealsData.results);
@@ -117,7 +104,7 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
         });
       }
     } catch (error) {
-      console.error('Error loading deals:', error);
+      console.error('❌ Error loading deals:', error);
       setError('Failed to load deals. Please try again.');
     } finally {
       setLoading(false);
@@ -162,6 +149,8 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
       setLoading(false);
     }
   }, [userLocation, filters.radius, filters.category]);
+
+  // Move useEffect hooks to after all functions are defined
 
 
 
@@ -214,10 +203,31 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
 
   const stats = getDealStats();
 
+  // useEffect hooks - placed here after all functions are defined
+  useEffect(() => {
+    loadCategories();
+    if (showNearby) {
+      getUserLocation();
+    }
+  }, [showNearby]);
+
+  useEffect(() => {
+    if (showNearby) {
+      loadNearbyDeals();
+    } else {
+      loadDeals();
+    }
+  }, [showNearby, loadNearbyDeals, loadDeals]);
+
+  useEffect(() => {
+    loadDeals();
+  }, [loadDeals]);
+
   if (loading && deals.length === 0) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Chargement des deals...</span>
       </div>
     );
   }
@@ -448,26 +458,34 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
           </p>
         </div>
 
-        {deals.length === 0 ? (
-          <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No deals found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Try adjusting your search criteria or create a new deal.
-            </p>
-            {showMyDeals && (
-              <div className="mt-6">
-                <Link
-                  to="/dashboard/deals/create"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Create New Deal
-                </Link>
-              </div>
-            )}
-          </div>
+                 {deals.length === 0 ? (
+           <div className="text-center py-12">
+             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+             </svg>
+             <h3 className="mt-2 text-sm font-medium text-gray-900">
+               {showMyDeals ? 'Aucun deal trouvé' : 'Aucun deal disponible'}
+             </h3>
+             <p className="mt-1 text-sm text-gray-500">
+               {showMyDeals 
+                 ? 'Vous n\'avez pas encore créé de deals. Commencez par en créer un !'
+                 : 'Aucun deal ne correspond à vos critères de recherche.'
+               }
+             </p>
+             {showMyDeals && (
+               <div className="mt-6">
+                 <button
+                   onClick={() => window.location.href = '/dashboard/deals/create'}
+                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                 >
+                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                   </svg>
+                   Créer mon premier deal
+                 </button>
+               </div>
+             )}
+           </div>
                  ) : (
            <div className="divide-y divide-gray-200">
              {deals.map((deal) => (

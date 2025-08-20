@@ -26,9 +26,18 @@ const DealForm = ({ deal = null, onSubmit, onCancel }) => {
   useEffect(() => {
     const loadBusinesses = async () => {
       try {
+        const storageType = localStorage.getItem('auth_storage_type');
+        const storage = storageType === 'local' ? localStorage : sessionStorage;
+        const token = storage.getItem('access_token');
+        
+        if (!token) {
+          console.error('No access token found in storage');
+          return;
+        }
+
         const response = await fetch('/api/businesses/my-businesses/', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -191,7 +200,7 @@ const DealForm = ({ deal = null, onSubmit, onCancel }) => {
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${(localStorage.getItem('auth_storage_type') === 'local' ? localStorage : sessionStorage).getItem('access_token')}`,
         },
         body: formDataToSend
       });

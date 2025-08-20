@@ -1,19 +1,35 @@
 class DealService {
   constructor() {
     this.baseURL = '/api/deals';
-    this.token = localStorage.getItem('access_token');
+  }
+
+  getStorage() {
+    const storageType = localStorage.getItem('auth_storage_type');
+    return storageType === 'local' ? localStorage : sessionStorage;
   }
 
   getHeaders() {
+    const storage = this.getStorage();
+    const token = storage.getItem('access_token');
+    if (!token) {
+      console.error('No access token found in storage');
+      throw new Error('No access token available');
+    }
     return {
-      'Authorization': `Bearer ${this.token}`,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
   }
 
   getFormDataHeaders() {
+    const storage = this.getStorage();
+    const token = storage.getItem('access_token');
+    if (!token) {
+      console.error('No access token found in storage');
+      throw new Error('No access token available');
+    }
     return {
-      'Authorization': `Bearer ${this.token}`,
+      'Authorization': `Bearer ${token}`,
       // Don't set Content-Type for FormData, let browser set it with boundary
     };
   }
