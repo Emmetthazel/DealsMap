@@ -11,6 +11,7 @@ import AuthService from './services/AuthService';
 import VerifyEmail from './pages/VerifyEmail';
 import VerifyEmailInfo from './pages/VerifyEmailInfo';
 import HierarchicalCategorySelector from './components/HierarchicalCategorySelector';
+import DealsDashboard from './pages/DealsDashboard';
 import { useCategoryStore } from './store/categoryStore';
 
 // Placeholder Dashboard component
@@ -29,7 +30,7 @@ const Dashboard = () => {
       await logout();
       toast.success('Déconnexion réussie!');
       navigate('/login');
-    } catch (error) {
+    } catch {
       toast.error('Erreur lors de la déconnexion');
     }
   };
@@ -97,13 +98,67 @@ const Dashboard = () => {
           </div>
         </div>
 
-
-        
+        {/* Main Dashboard Content */}
         <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
-            <p className="text-gray-500 text-lg">
-              Contenu du tableau de bord à venir...
-            </p>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Tableau de bord</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Quick Actions */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4">Actions rapides</h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => navigate('/dashboard/deals')}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Gérer mes deals
+                  </button>
+                  <button
+                    onClick={() => navigate('/dashboard/deals')}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Créer un nouveau deal
+                  </button>
+                </div>
+              </div>
+
+              {/* Statistics Preview */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-green-900 mb-4">Statistiques</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-green-700">Deals actifs:</span>
+                    <span className="font-medium">-</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-700">Vues totales:</span>
+                    <span className="font-medium">-</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-700">Conversions:</span>
+                    <span className="font-medium">-</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-purple-900 mb-4">Activité récente</h3>
+                <div className="text-sm text-purple-700">
+                  <p>Connectez-vous à la gestion des deals pour voir votre activité récente.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => navigate('/dashboard/deals')}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-lg font-medium transition-colors"
+              >
+                Accéder à la gestion des deals →
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -171,6 +226,25 @@ const App = () => {
           } 
         />
         
+        {/* Deals management routes */}
+        <Route 
+          path="/dashboard/deals" 
+          element={
+            <PrivateRoute>
+              <DealsDashboard />
+            </PrivateRoute>
+          } 
+        />
+        
+        <Route 
+          path="/dashboard/deals/:id/edit" 
+          element={
+            <PrivateRoute>
+              <DealsDashboard />
+            </PrivateRoute>
+          } 
+        />
+
         {/* Redirect root to dashboard if authenticated, otherwise to login */}
         <Route 
           path="/" 

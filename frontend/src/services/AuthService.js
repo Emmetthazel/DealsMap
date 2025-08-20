@@ -88,7 +88,7 @@ authAPI.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${access}`;
           return authAPI(originalRequest);
         }
-      } catch (refreshError) {
+      } catch {
         // Refresh failed, clear tokens and redirect to login
         clearTokens();
         window.location.href = '/login';

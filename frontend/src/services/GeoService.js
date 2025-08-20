@@ -240,10 +240,9 @@ class GeoService {
 
   /**
    * Get location from address using geocoding (placeholder)
-   * @param {string} address - Address to geocode
    * @returns {Promise} - Geocoded coordinates
    */
-  static async geocodeAddress(address) {
+  static async geocodeAddress() {
     // This would require a geocoding service like Google Maps Geocoding API
     // For now, return a placeholder
     throw new Error('Geocoding service not implemented. Please provide coordinates manually.');
@@ -251,11 +250,9 @@ class GeoService {
 
   /**
    * Get address from coordinates using reverse geocoding (placeholder)
-   * @param {number} lat - Latitude
-   * @param {number} lng - Longitude
    * @returns {Promise} - Reverse geocoded address
    */
-  static async reverseGeocode(lat, lng) {
+  static async reverseGeocode() {
     // This would require a reverse geocoding service
     // For now, return a placeholder
     throw new Error('Reverse geocoding service not implemented.');

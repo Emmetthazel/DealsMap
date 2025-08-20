@@ -68,7 +68,7 @@ businessAPI.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${access}`;
           return businessAPI(originalRequest);
         }
-      } catch (refreshError) {
+      } catch {
         // Refresh failed, redirect to login
         window.location.href = '/login';
       }

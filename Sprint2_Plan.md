@@ -98,9 +98,9 @@
 
 #### Zineb – Deals
 
-- [ ] Frontend : Créer `DealForm` :
+- [X] Frontend : Créer `DealForm` :
   - Prix, dates, upload d’images avec aperçu.
-- [ ] Implémenter `DealService` (CRUD + validation côté client).
+- [X] Implémenter `DealService` (CRUD + validation côté client).
 
 **Validation :**
 
@@ -118,8 +118,8 @@
 
 #### Zineb – Deals
 
-- [ ] Intégrer `/deals` API avec filtres dans le frontend.
-- [ ] Ajouter statistiques deals (ventes, vues, conversions).
+- [X] Intégrer `/deals` API avec filtres dans le frontend.
+- [X] Ajouter statistiques deals (ventes, vues, conversions).
 
 **Validation :**
 
@@ -138,8 +138,8 @@
 
 #### Zineb – Deals
 
-- [ ] Ajouter **Redis cache** pour `/deals`.
-- [ ] Optimiser formulaires et filtres.
+- [X] Ajouter **Redis cache** pour `/deals`.
+- [X] Optimiser formulaires et filtres.
 
 **Validation :**
 
@@ -152,38 +152,15 @@
 
 #### **Abdelkhalek** & Zineb – Ensemble
 
-- [ ] QA et correction de bugs.
-- [ ] Tests backend pour les endpoints.
-- [ ] Tests frontend pour formulaires et services.
+- [X] QA et correction de bugs.
+- [X] Tests backend pour les endpoints.
+- [X] Tests frontend pour formulaires et services.
 
 **Validation :**
 
-- [ ] Tous les tests passent.
+- [X] Tous les tests passent.
 - [ ] Scénario complet fonctionne :
   1. Créer un établissement.
   2. Ajouter des deals.
   3. Rechercher via géolocalisation.
   4. Voir statistiques dans dashboard.
-
----
-
-## ✅ Checklist de Fonctionnalités
-
-### Backend
-
-- [ ] Modèle `Business` stocke coordonnées via PostGIS.
-- [ ] Modèle `Deal` applique toutes les règles métier.
-- [ ] Endpoints `/nearby` et `/deals` filtrent correctement (<500ms).
-- [ ] Redis actif pour les requêtes fréquentes.
-
-### Frontend
-
-- [ ] Formulaires valident les données avant envoi.
-- [ ] Upload d’images avec aperçu et enregistrement correct.
-- [ ] Dashboard affiche stats correctes.
-- [ ] Responsive sur mobile & desktop.
-
-### Intégration
-
-- [ ] Flux complet testé : création Business → ajout Deals → recherche → stats.
-- [ ] Aucun bug bloquant ou erreur API.

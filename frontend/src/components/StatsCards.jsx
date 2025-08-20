@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import BusinessService from '../services/BusinessService.js';
 
 const StatsCards = ({ businessId = null, refreshTrigger = 0 }) => {
@@ -17,9 +17,9 @@ const StatsCards = ({ businessId = null, refreshTrigger = 0 }) => {
 
   useEffect(() => {
     fetchStats();
-  }, [businessId, refreshTrigger]);
+  }, [businessId, refreshTrigger, fetchStats]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     setError('');
     
@@ -51,7 +51,7 @@ const StatsCards = ({ businessId = null, refreshTrigger = 0 }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
 
   const StatCard = ({ title, value, subtitle, icon, color, trend = null }) => (
     <div className={`bg-white rounded-lg shadow-md p-6 border-l-4 ${color}`}>

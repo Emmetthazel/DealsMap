@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
+from django.db.models import Q, F
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
@@ -58,6 +58,7 @@ class DealViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
     def nearby(self, request):
         """
@@ -88,7 +89,10 @@ class DealViewSet(viewsets.ModelViewSet):
         # Create point and filter by distance
         user_location = Point(lng, lat, srid=4326)
         
-        queryset = self.get_queryset().filter(
+        # Use select_related and prefetch_related for better performance
+        queryset = self.get_queryset().select_related(
+            'business', 'business__category'
+        ).filter(
             business__location__distance_lte=(user_location, D(km=radius))
         ).annotate(
             distance=Distance('business__location', user_location)
@@ -137,12 +141,16 @@ class DealViewSet(viewsets.ModelViewSet):
         serializer = DealSerializer(queryset, many=True)
         return Response(serializer.data)
     
+    @method_decorator(cache_page(60 * 3))  # Cache for 3 minutes
     @action(detail=False, methods=['get'])
     def search(self, request):
         """
         Advanced search with multiple filters
         """
-        queryset = self.get_queryset()
+        # Use select_related for better performance
+        queryset = self.get_queryset().select_related(
+            'business', 'business__category'
+        )
         
         # Price range filtering
         min_price = request.query_params.get('min_price')
@@ -189,10 +197,10 @@ class DealViewSet(viewsets.ModelViewSet):
             serializer = DealListSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         
-        serializer = DealListSerializer(queryset, many=True)
+        serializer = DealListSerializer(page, many=True)
         return Response(serializer.data)
     
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     @action(detail=False, methods=['get'])
     def categories(self, request):
         """
@@ -205,6 +213,66 @@ class DealViewSet(viewsets.ModelViewSet):
         ).distinct().values('id', 'name')
         
         return Response(categories)
+
+    @method_decorator(cache_page(60 * 10))  # Cache for 10 minutes
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """
+        Get deal statistics for dashboard
+        """
+        from django.db.models import Count, Avg, Sum
+        from django.utils import timezone
+        
+        now = timezone.now()
+        
+        # Get user's deals if authenticated
+        if request.user.is_authenticated:
+            user_deals = Deal.objects.filter(business__owner=request.user)
+            
+            stats = {
+                'total_deals': user_deals.count(),
+                'active_deals': user_deals.filter(
+                    is_active=True,
+                    start_date__lte=now,
+                    end_date__gte=now
+                ).count(),
+                'upcoming_deals': user_deals.filter(
+                    is_active=True,
+                    start_date__gt=now
+                ).count(),
+                'expired_deals': user_deals.filter(
+                    end_date__lt=now
+                ).count(),
+                'total_views': user_deals.aggregate(
+                    total=Sum('current_uses')
+                )['total'] or 0,
+                'average_discount': user_deals.aggregate(
+                    avg=Avg('discount_percentage')
+                )['avg'] or 0,
+                'total_savings': user_deals.aggregate(
+                    savings=Sum(
+                        models.F('original_price') - models.F('deal_price')
+                    )
+                )['savings'] or 0
+            }
+        else:
+            # Public stats
+            all_deals = Deal.objects.filter(is_active=True)
+            stats = {
+                'total_deals': all_deals.count(),
+                'active_deals': all_deals.filter(
+                    start_date__lte=now,
+                    end_date__gte=now
+                ).count(),
+                'upcoming_deals': all_deals.filter(
+                    start_date__gt=now
+                ).count(),
+                'average_discount': all_deals.aggregate(
+                    avg=Avg('discount_percentage')
+                )['avg'] or 0
+            }
+        
+        return Response(stats)
     
     def perform_create(self, serializer):
         """Custom create logic"""
