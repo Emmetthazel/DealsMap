@@ -16,6 +16,7 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
     min_discount: '',
     status: '',
     search: '',
+    radius: 10,
     ...initialFilters
   });
   const [pagination, setPagination] = useState({
@@ -26,6 +27,9 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
   });
   const [categories, setCategories] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
+  const [showManualLocation, setShowManualLocation] = useState(false);
+  const [manualLocation, setManualLocation] = useState({ latitude: '', longitude: '' });
+  const [locationRequested, setLocationRequested] = useState(false);
 
   // Define all callback functions first
   const loadCategories = async () => {
@@ -38,29 +42,82 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
   };
 
   const getUserLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          setError('Unable to get your location. Please enable location services.');
-        }
-      );
-    } else {
-      setError('Geolocation is not supported by this browser.');
+    if (locationRequested) {
+      console.log('📍 Location already requested, skipping...');
+      return;
     }
+
+    if (!navigator.geolocation) {
+      console.warn('⚠️ Geolocation not supported by this browser');
+      toast.error('La géolocalisation n\'est pas supportée par votre navigateur');
+      return;
+    }
+
+    console.log('📍 Requesting user location...');
+    setLocationRequested(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        console.log('✅ Location obtained:', position.coords);
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+        toast.success('Localisation obtenue avec succès');
+      },
+      (error) => {
+        console.error('❌ Error getting location:', error);
+        
+        // Provide specific error messages based on error code
+        let errorMessage = 'Erreur lors de l\'obtention de la localisation';
+        let userGuidance = '';
+        
+        switch (error.code) {
+          case 1:
+            errorMessage = 'Accès à la localisation refusé';
+            userGuidance = 'Veuillez autoriser l\'accès à votre position dans les paramètres de votre navigateur.';
+            break;
+          case 2:
+            errorMessage = 'Position indisponible';
+            userGuidance = 'Vérifiez que votre GPS est activé ou essayez de vous déplacer. Vous pouvez aussi utiliser la localisation manuelle ci-dessous.';
+            break;
+          case 3:
+            errorMessage = 'Délai d\'attente dépassé';
+            userGuidance = 'La demande de localisation a pris trop de temps. Essayez de nouveau ou utilisez la localisation manuelle.';
+            break;
+          default:
+            errorMessage = 'Erreur inconnue lors de l\'obtention de la localisation';
+            userGuidance = 'Essayez de rafraîchir la page ou utilisez la localisation manuelle.';
+        }
+        
+        toast.error(errorMessage);
+        
+        // Show guidance in console for debugging
+        console.log('💡 User guidance:', userGuidance);
+        
+        // Set a default location (Paris coordinates) as fallback
+        console.log('🔄 Setting default location (Paris) as fallback');
+        setUserLocation({
+          latitude: 48.8566,
+          longitude: 2.3522
+        });
+        
+        // Show manual location input by default when geolocation fails
+        setShowManualLocation(true);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
   };
 
   const loadDeals = useCallback(async () => {
     setLoading(true);
     setError(null);
     
-    console.log('🔄 Loading deals...', { showMyDeals, showNearby, filters });
+    console.log('�� Loading deals...', { showMyDeals, showNearby, filters });
 
     try {
       let dealsData;
@@ -150,9 +207,29 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
     }
   }, [userLocation, filters.radius, filters.category]);
 
-  // Move useEffect hooks to after all functions are defined
+  // useEffect hooks - placed here after all functions are defined
+  useEffect(() => {
+    loadCategories();
+  }, []); // Only run once on mount
 
+  useEffect(() => {
+    if (showNearby && !locationRequested) {
+      getUserLocation();
+    } else if (!showNearby) {
+      // Reset location state when not showing nearby deals
+      setLocationRequested(false);
+      setUserLocation(null);
+      setShowManualLocation(false);
+    }
+  }, [showNearby]); // Remove locationRequested from dependencies to prevent loops
 
+  useEffect(() => {
+    if (showNearby && userLocation) {
+      loadNearbyDeals();
+    } else if (!showNearby) {
+      loadDeals();
+    }
+  }, [showNearby, userLocation, loadNearbyDeals, loadDeals]);
 
   const handleFilterChange = (name, value) => {
     setFilters(prev => ({
@@ -202,26 +279,6 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
   };
 
   const stats = getDealStats();
-
-  // useEffect hooks - placed here after all functions are defined
-  useEffect(() => {
-    loadCategories();
-    if (showNearby) {
-      getUserLocation();
-    }
-  }, [showNearby]);
-
-  useEffect(() => {
-    if (showNearby) {
-      loadNearbyDeals();
-    } else {
-      loadDeals();
-    }
-  }, [showNearby, loadNearbyDeals, loadDeals]);
-
-  useEffect(() => {
-    loadDeals();
-  }, [loadDeals]);
 
   if (loading && deals.length === 0) {
     return (
@@ -324,127 +381,199 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSearch} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                placeholder="Search deals..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Categories</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.name}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Price Range */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Min Price</label>
-              <input
-                type="number"
-                value={filters.min_price}
-                onChange={(e) => handleFilterChange('min_price', e.target.value)}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
-              <input
-                type="number"
-                value={filters.max_price}
-                onChange={(e) => handleFilterChange('max_price', e.target.value)}
-                placeholder="1000.00"
-                step="0.01"
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtres</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Category Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Catégorie
+            </label>
+            <select
+              value={filters.category}
+              onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Toutes les catégories</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Additional Filters Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Min Discount */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Min Discount %</label>
-              <input
-                type="number"
-                value={filters.min_discount}
-                onChange={(e) => handleFilterChange('min_discount', e.target.value)}
-                placeholder="10"
-                min="0"
-                max="100"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          {/* Radius Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Rayon (km)
+            </label>
+            <select
+              value={filters.radius}
+              onChange={(e) => setFilters(prev => ({ ...prev, radius: parseInt(e.target.value) }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5 km</option>
+              <option value={10}>10 km</option>
+              <option value={25}>25 km</option>
+              <option value={50}>50 km</option>
+              <option value={100}>100 km</option>
+            </select>
+          </div>
 
-            {/* Status (for my deals) */}
-            {showMyDeals && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="upcoming">Upcoming</option>
-                  <option value="expired">Expired</option>
-                </select>
-              </div>
-            )}
+          {/* Price Range */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Prix minimum
+            </label>
+            <input
+              type="number"
+              value={filters.price_min}
+              onChange={(e) => setFilters(prev => ({ ...prev, price_min: e.target.value }))}
+              placeholder="0.00"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-            {/* Radius (for nearby search) */}
-            {showNearby && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Radius (km)</label>
-                <select
-                  value={filters.radius || 10}
-                  onChange={(e) => handleFilterChange('radius', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value={5}>5 km</option>
-                  <option value={10}>10 km</option>
-                  <option value={20}>20 km</option>
-                  <option value={50}>50 km</option>
-                </select>
-              </div>
-            )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Prix maximum
+            </label>
+            <input
+              type="number"
+              value={filters.price_max}
+              onChange={(e) => setFilters(prev => ({ ...prev, price_max: e.target.value }))}
+              placeholder="1000.00"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
 
-            {/* Search Button */}
-            <div className="flex items-end">
+        {/* Manual Location Input for Nearby Deals */}
+        {showNearby && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-gray-700">Localisation manuelle</h4>
               <button
-                type="submit"
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={() => setShowManualLocation(!showManualLocation)}
+                className="text-sm text-blue-600 hover:text-blue-800"
               >
-                Search
+                {showManualLocation ? 'Masquer' : 'Afficher'}
               </button>
             </div>
+            
+            {showManualLocation && (
+              <>
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Conseil :</strong> Si la géolocalisation automatique ne fonctionne pas, 
+                    vous pouvez saisir manuellement vos coordonnées GPS ou utiliser une ville connue 
+                    (ex: Paris: 48.8566, 2.3522).
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Latitude
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={manualLocation.latitude}
+                      onChange={(e) => setManualLocation(prev => ({ ...prev, latitude: e.target.value }))}
+                      placeholder="48.8566"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Longitude
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={manualLocation.longitude}
+                      onChange={(e) => setManualLocation(prev => ({ ...prev, longitude: e.target.value }))}
+                      placeholder="2.3522"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div className="flex items-end">
+                    <button
+                      onClick={() => {
+                        if (manualLocation.latitude && manualLocation.longitude) {
+                          setUserLocation({
+                            latitude: parseFloat(manualLocation.latitude),
+                            longitude: parseFloat(manualLocation.longitude)
+                          });
+                          toast.success('Localisation manuelle définie');
+                        } else {
+                          toast.error('Veuillez saisir la latitude et longitude');
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      Définir
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-        </form>
+        )}
+
+        {/* Search Input */}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Recherche
+          </label>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              placeholder="Rechercher des deals..."
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  loadDeals();
+                }
+              }}
+            />
+            <button
+              onClick={loadDeals}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Rechercher
+            </button>
+          </div>
+          
+          {/* Clear Filters Button */}
+          <div className="mt-3">
+            <button
+              onClick={() => {
+                setFilters({
+                  category: '',
+                  min_price: '',
+                  max_price: '',
+                  min_discount: '',
+                  status: '',
+                  search: '',
+                  radius: 10
+                });
+                setPagination(prev => ({ ...prev, current_page: 1 }));
+                setTimeout(() => loadDeals(), 100);
+              }}
+              className="text-sm text-gray-600 hover:text-gray-800 underline"
+            >
+              Effacer tous les filtres
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Deals List */}

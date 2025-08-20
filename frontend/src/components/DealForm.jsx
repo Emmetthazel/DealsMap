@@ -30,26 +30,50 @@ const DealForm = ({ deal = null, onSubmit, onCancel }) => {
         const storage = storageType === 'local' ? localStorage : sessionStorage;
         const token = storage.getItem('access_token');
         
+        console.log('🔍 Loading businesses...');
+        console.log('Storage type:', storageType);
+        console.log('Token exists:', !!token);
+        console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'No token');
+        
+        // Debug: Check all storage contents
+        console.log('🔍 localStorage contents:', Object.keys(localStorage).filter(key => key.startsWith('auth')));
+        console.log('🔍 sessionStorage contents:', Object.keys(sessionStorage).filter(key => key.startsWith('auth')));
+        console.log('🔍 Full localStorage:', Object.fromEntries(Object.entries(localStorage).filter(([key]) => key.startsWith('auth'))));
+        console.log('🔍 Full sessionStorage:', Object.fromEntries(Object.entries(sessionStorage).filter(([key]) => key.startsWith('auth'))));
+        
         if (!token) {
           console.error('No access token found in storage');
           return;
         }
 
+        console.log('📡 Making API call to /api/businesses/my-businesses/');
         const response = await fetch('/api/businesses/my-businesses/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('📊 Business data received:', data);
+          console.log('📊 Business count:', data.results ? data.results.length : data.length);
           setBusinesses(data.results || data);
           if (data.results && data.results.length > 0) {
             setSelectedBusiness(data.results[0].id);
+            console.log('✅ Selected first business:', data.results[0].name);
+          } else {
+            console.log('⚠️ No businesses found in response');
           }
+        } else {
+          const errorText = await response.text();
+          console.error('❌ API error:', response.status, errorText);
         }
       } catch (error) {
-        console.error('Error loading businesses:', error);
+        console.error('💥 Error loading businesses:', error);
       }
     };
 
@@ -73,6 +97,7 @@ const DealForm = ({ deal = null, onSubmit, onCancel }) => {
       }
     } else {
       // Create mode - load user's businesses
+      console.log('🚀 Starting business loading for create mode...');
       loadBusinesses();
     }
   }, [deal]);

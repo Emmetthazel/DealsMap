@@ -33,10 +33,14 @@ const DealsDashboard = () => {
   const handleDeleteDeal = async (dealId) => {
     if (window.confirm('Are you sure you want to delete this deal?')) {
       try {
+        const storageType = localStorage.getItem('auth_storage_type');
+        const storage = storageType === 'local' ? localStorage : sessionStorage;
+        const token = storage.getItem('access_token');
+        
         const response = await fetch(`/api/deals/${dealId}/`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+            'Authorization': `Bearer ${token}`,
           },
         });
 
@@ -59,9 +63,13 @@ const DealsDashboard = () => {
     if (pathParts.includes('edit') && pathParts[pathParts.length - 2] === 'deals') {
       const dealId = pathParts[pathParts.length - 1];
       // Fetch deal data and show edit form
+      const storageType = localStorage.getItem('auth_storage_type');
+      const storage = storageType === 'local' ? localStorage : sessionStorage;
+      const token = storage.getItem('access_token');
+      
       fetch(`/api/deals/${dealId}/`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       })
         .then(response => response.json())
@@ -74,6 +82,17 @@ const DealsDashboard = () => {
         });
     }
   }, [location]);
+
+  // Debug: Check authentication state
+  React.useEffect(() => {
+    const storageType = localStorage.getItem('auth_storage_type');
+    const storage = storageType === 'local' ? localStorage : sessionStorage;
+    const token = storage.getItem('access_token');
+    
+    console.log('🔍 DealsDashboard - Storage type:', storageType);
+    console.log('🔍 DealsDashboard - Token exists:', !!token);
+    console.log('🔍 DealsDashboard - Token preview:', token ? `${token.substring(0, 20)}...` : 'No token');
+  }, []);
 
   if (showCreateForm) {
     return (
