@@ -25,12 +25,10 @@ const PrivateRoute = ({ children }) => {
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    console.log('🔒 Access denied, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Show children if authenticated
-  console.log('✅ Access granted');
   return children;
 };
 

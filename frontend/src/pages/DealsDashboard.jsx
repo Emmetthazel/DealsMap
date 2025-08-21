@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import DealsList from '../components/DealsList';
 import DealForm from '../components/DealForm';
+import BusinessForm from '../components/BusinessForm';
+import DealService from '../services/DealService';
 
 const DealsDashboard = () => {
   const [activeTab, setActiveTab] = useState('my-deals');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showBusinessForm, setShowBusinessForm] = useState(false);
   const [editingDeal, setEditingDeal] = useState(null);
+  const [viewingDeal, setViewingDeal] = useState(null);
   const location = useLocation();
 
   // Handle form submission
@@ -23,10 +27,32 @@ const DealsDashboard = () => {
     setEditingDeal(null);
   };
 
+  // Handle deal details close
+  const handleDealDetailsClose = () => {
+    setViewingDeal(null);
+  };
+
+  // Handle business form success
+  const handleBusinessFormSuccess = (business) => {
+    setShowBusinessForm(false);
+    // Refresh the page to show the new business
+    window.location.reload();
+  };
+
+  // Handle business form cancel
+  const handleBusinessFormCancel = () => {
+    setShowBusinessForm(false);
+  };
+
   // Handle edit deal
   const handleEditDeal = (dealData) => {
     setEditingDeal(dealData);
     setShowCreateForm(true);
+  };
+
+  // Handle view deal details
+  const handleViewDeal = (dealData) => {
+    setViewingDeal(dealData);
   };
 
   // Handle delete deal
@@ -51,7 +77,6 @@ const DealsDashboard = () => {
           alert('Failed to delete deal');
         }
       } catch (error) {
-        console.error('Error deleting deal:', error);
         alert('Error deleting deal');
       }
     }
@@ -59,40 +84,32 @@ const DealsDashboard = () => {
 
   // Check if we're editing a deal from URL
   React.useEffect(() => {
-    const pathParts = location.pathname.split('/');
-    if (pathParts.includes('edit') && pathParts[pathParts.length - 2] === 'deals') {
-      const dealId = pathParts[pathParts.length - 1];
-      // Fetch deal data and show edit form
-      const storageType = localStorage.getItem('auth_storage_type');
-      const storage = storageType === 'local' ? localStorage : sessionStorage;
-      const token = storage.getItem('access_token');
-      
-      fetch(`/api/deals/${dealId}/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-        .then(response => response.json())
-        .then(dealData => {
-          setEditingDeal(dealData);
-          setShowCreateForm(true);
-        })
-        .catch(error => {
-          console.error('Error fetching deal:', error);
-        });
-    }
+    console.log('Location changed:', location.pathname);
+          const fetchDealForEdit = async () => {
+        const pathParts = location.pathname.split('/');
+        console.log('Path parts:', pathParts);
+        if (pathParts.includes('edit') && pathParts.includes('deals')) {
+          const dealId = pathParts[pathParts.length - 2];
+          // Fetch deal data and show edit form
+          console.log('Fetching deal for edit:', dealId);
+          console.log('About to call DealService.getDealById...');
+          try {
+            const dealData = await DealService.getDealById(dealId);
+            console.log('Edit deal data received:', dealData);
+            setEditingDeal(dealData);
+            setShowCreateForm(true);
+          } catch (error) {
+            console.error('Error fetching deal for edit:', error);
+            console.error('Error details:', error.message, error.stack);
+            // Silent error handling
+          }
+        }
+      };
+    
+    fetchDealForEdit();
   }, [location]);
 
-  // Debug: Check authentication state
-  React.useEffect(() => {
-    const storageType = localStorage.getItem('auth_storage_type');
-    const storage = storageType === 'local' ? localStorage : sessionStorage;
-    const token = storage.getItem('access_token');
-    
-    console.log('🔍 DealsDashboard - Storage type:', storageType);
-    console.log('🔍 DealsDashboard - Token exists:', !!token);
-    console.log('🔍 DealsDashboard - Token preview:', token ? `${token.substring(0, 20)}...` : 'No token');
-  }, []);
+
 
   if (showCreateForm) {
     return (
@@ -114,6 +131,117 @@ const DealsDashboard = () => {
             onSubmit={handleDealSubmit}
             onCancel={handleFormCancel}
           />
+        </div>
+      </div>
+    );
+  }
+
+  if (showBusinessForm) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <button
+              onClick={handleBusinessFormCancel}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Dashboard
+            </button>
+          </div>
+          <BusinessForm
+            onSuccess={handleBusinessFormSuccess}
+            onCancel={handleBusinessFormCancel}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (viewingDeal) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <button
+              onClick={handleDealDetailsClose}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Dashboard
+            </button>
+          </div>
+          
+          {/* Deal Details View */}
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">{viewingDeal.title}</h1>
+                  <p className="text-lg text-gray-600 mt-2">{viewingDeal.business_name}</p>
+                  <p className="text-sm text-gray-500 mt-1">{viewingDeal.category_name}</p>
+                </div>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                  viewingDeal.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  {viewingDeal.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+                  <p className="text-gray-700">{viewingDeal.description}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Pricing</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Original Price:</span>
+                      <span className="text-gray-900 font-medium">{viewingDeal.original_price}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Deal Price:</span>
+                      <span className="text-green-600 font-bold text-lg">{viewingDeal.deal_price}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Discount:</span>
+                      <span className="text-blue-600 font-medium">{viewingDeal.discount_percentage}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">Start Date</h4>
+                    <p className="text-gray-900">{new Date(viewingDeal.start_date).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">End Date</h4>
+                    <p className="text-gray-900">{new Date(viewingDeal.end_date).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">Max Uses</h4>
+                    <p className="text-gray-900">{viewingDeal.max_uses}</p>
+                  </div>
+                </div>
+                
+                {viewingDeal.conditions && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Terms & Conditions</h4>
+                    <p className="text-gray-700 text-sm">{viewingDeal.conditions}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -186,19 +314,34 @@ const DealsDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Message for First-Time Users */}
         <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-blue-900">
+                  Bienvenue dans votre tableau de bord des deals !
+                </h3>
+                <p className="mt-1 text-sm text-blue-700">
+                  Commencez par créer votre premier deal ou explorez les fonctionnalités disponibles.
+                </p>
+              </div>
             </div>
-            <div className="ml-3">
-              <h3 className="text-lg font-medium text-blue-900">
-                Bienvenue dans votre tableau de bord des deals !
-              </h3>
-              <p className="mt-1 text-sm text-blue-700">
-                Commencez par créer votre premier deal ou explorez les fonctionnalités disponibles.
-              </p>
+            
+            {/* Business Creation Button - Always Visible */}
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowBusinessForm(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Créer un établissement
+              </button>
             </div>
           </div>
         </div>
@@ -209,6 +352,9 @@ const DealsDashboard = () => {
             showMyDeals={true}
             onEditDeal={handleEditDeal}
             onDeleteDeal={handleDeleteDeal}
+            onCreateDeal={() => setShowCreateForm(true)}
+            onCreateBusiness={() => setShowBusinessForm(true)}
+            onViewDeal={handleViewDeal}
           />
         )}
         
@@ -216,6 +362,8 @@ const DealsDashboard = () => {
           <DealsList
             showNearby={true}
             initialFilters={{ radius: 10 }}
+            onCreateDeal={() => setShowCreateForm(true)}
+            onViewDeal={handleViewDeal}
           />
         )}
         
@@ -223,6 +371,8 @@ const DealsDashboard = () => {
           <DealsList
             showMyDeals={false}
             showNearby={false}
+            onCreateDeal={() => setShowCreateForm(true)}
+            onViewDeal={handleViewDeal}
           />
         )}
       </div>

@@ -47,7 +47,6 @@ const StatsCards = ({ businessId = null, refreshTrigger = 0 }) => {
       }
     } catch (error) {
       setError('Failed to load statistics');
-      console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
     }

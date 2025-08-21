@@ -260,7 +260,6 @@ const useDealsStore = create(
           
           return data;
         } catch (error) {
-          console.error('Error fetching categories:', error);
           return [];
         }
       },

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import DealService from '../services/DealService';
+import { fetchCategories } from '../services/categoryService';
 import { toast } from 'react-hot-toast';
 import useDealsStore from '../store/dealsStore';
 
-const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {} }) => {
+const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {}, onCreateDeal, onCreateBusiness, onViewDeal }) => {
   const dealsStore = useDealsStore();
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,31 +35,30 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
   // Define all callback functions first
   const loadCategories = async () => {
     try {
-      const categoriesData = await DealService.getDealCategories();
+      console.log('Loading categories...');
+      const categoriesData = await fetchCategories();
+      console.log('Categories loaded:', categoriesData);
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error loading categories:', error);
+      // Silent error handling
     }
   };
 
   const getUserLocation = () => {
     if (locationRequested) {
-      console.log('📍 Location already requested, skipping...');
       return;
     }
 
     if (!navigator.geolocation) {
-      console.warn('⚠️ Geolocation not supported by this browser');
       toast.error('La géolocalisation n\'est pas supportée par votre navigateur');
       return;
     }
 
-    console.log('📍 Requesting user location...');
     setLocationRequested(true);
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log('✅ Location obtained:', position.coords);
         setUserLocation({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
@@ -66,8 +66,6 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
         toast.success('Localisation obtenue avec succès');
       },
       (error) => {
-        console.error('❌ Error getting location:', error);
-        
         // Provide specific error messages based on error code
         let errorMessage = 'Erreur lors de l\'obtention de la localisation';
         let userGuidance = '';
@@ -92,11 +90,7 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
         
         toast.error(errorMessage);
         
-        // Show guidance in console for debugging
-        console.log('💡 User guidance:', userGuidance);
-        
         // Set a default location (Paris coordinates) as fallback
-        console.log('🔄 Setting default location (Paris) as fallback');
         setUserLocation({
           latitude: 48.8566,
           longitude: 2.3522
@@ -116,14 +110,13 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
   const loadDeals = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
-    console.log('�� Loading deals...', { showMyDeals, showNearby, filters });
 
     try {
       let dealsData;
+      console.log('loadDeals called with:', { showNearby, showMyDeals, filters, userLocation });
 
       if (showNearby && userLocation) {
-        console.log('📍 Loading nearby deals...');
+        console.log('Loading nearby deals...');
         dealsData = await DealService.getNearbyDeals(
           userLocation.latitude,
           userLocation.longitude,
@@ -131,19 +124,41 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
           filters.category
         );
       } else if (showMyDeals) {
-        console.log('👤 Loading my deals...');
+        // For My Deals, use search endpoint if there are search filters, otherwise use my-deals
+        const hasSearchFilters = filters.search || filters.category || filters.min_price || filters.max_price || filters.min_discount;
+        console.log('My Deals - hasSearchFilters:', hasSearchFilters, 'filters:', filters);
+        
+                 if (hasSearchFilters) {
+           console.log('Using search endpoint for My Deals with owner filter');
+           console.log('Category filter value:', filters.category);
+           // Use search endpoint with owner filter
+           dealsData = await DealService.searchDeals({
+             ...filters,
+             owner: 'me', // This will be handled by backend to filter by current user
+             page: pagination.current_page
+           });
+         } else {
+          console.log('Using my-deals endpoint for simple status filtering');
+          // Use my-deals endpoint for simple status filtering
         dealsData = await DealService.getMyDeals(filters.status);
-      } else {
-        console.log('🔍 Loading all deals...');
-        dealsData = await DealService.searchDeals({
-          ...filters,
-          page: pagination.current_page
-        });
-      }
-      
-      console.log('✅ Deals loaded:', dealsData);
+        }
+             } else {
+         console.log('Loading all deals with search...');
+         console.log('Category filter value for All Deals:', filters.category);
+         dealsData = await DealService.searchDeals({
+           ...filters,
+           page: pagination.current_page
+         });
+       }
+
+      console.log('Deals data received:', dealsData);
 
       if (dealsData.results) {
+        console.log('Search results with priority:', dealsData.results.map(deal => ({
+          id: deal.id,
+          title: deal.title,
+          search_priority: deal.search_priority || 'N/A'
+        })));
         setDeals(dealsData.results);
         setPagination({
           count: dealsData.count || 0,
@@ -161,7 +176,6 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
         });
       }
     } catch (error) {
-      console.error('❌ Error loading deals:', error);
       setError('Failed to load deals. Please try again.');
     } finally {
       setLoading(false);
@@ -200,7 +214,6 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
         });
       }
     } catch (error) {
-      console.error('Error loading nearby deals:', error);
       setError('Failed to load nearby deals. Please try again.');
     } finally {
       setLoading(false);
@@ -384,69 +397,35 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtres</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
           {/* Category Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Catégorie
             </label>
-            <select
-              value={filters.category}
-              onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+                         <select
+               value={filters.category}
+               onChange={(e) => {
+                 const categoryValue = e.target.value;
+                 console.log('Category changed to:', categoryValue);
+                 console.log('Category value type:', typeof categoryValue);
+                 console.log('Category value truthy:', !!categoryValue);
+                 setFilters(prev => ({ ...prev, category: categoryValue }));
+               }}
+               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+             >
               <option value="">Toutes les catégories</option>
-              {categories.map(category => (
+              {console.log('Rendering categories:', categories)}
+              {categories && categories.length > 0 ? (
+                categories.map(category => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
-              ))}
+                ))
+              ) : (
+                <option value="" disabled>Chargement des catégories...</option>
+              )}
             </select>
-          </div>
-
-          {/* Radius Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Rayon (km)
-            </label>
-            <select
-              value={filters.radius}
-              onChange={(e) => setFilters(prev => ({ ...prev, radius: parseInt(e.target.value) }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value={5}>5 km</option>
-              <option value={10}>10 km</option>
-              <option value={25}>25 km</option>
-              <option value={50}>50 km</option>
-              <option value={100}>100 km</option>
-            </select>
-          </div>
-
-          {/* Price Range */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Prix minimum
-            </label>
-            <input
-              type="number"
-              value={filters.price_min}
-              onChange={(e) => setFilters(prev => ({ ...prev, price_min: e.target.value }))}
-              placeholder="0.00"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Prix maximum
-            </label>
-            <input
-              type="number"
-              value={filters.price_max}
-              onChange={(e) => setFilters(prev => ({ ...prev, price_max: e.target.value }))}
-              placeholder="1000.00"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
           </div>
         </div>
 
@@ -544,10 +523,16 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
                 }
               }}
             />
-            <button
-              onClick={loadDeals}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+                         <button
+               onClick={() => {
+                 console.log('Search button clicked with filters:', filters);
+                 console.log('Category filter specifically:', filters.category);
+                 console.log('All filter keys:', Object.keys(filters));
+                 console.log('All filter values:', Object.values(filters));
+                 loadDeals();
+               }}
+               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+             >
               Rechercher
             </button>
           </div>
@@ -602,9 +587,21 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
                }
              </p>
              {showMyDeals && (
-               <div className="mt-6">
+                <div className="mt-6 space-y-3">
+                  <button
+                    onClick={onCreateBusiness}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Créer mon premier établissement
+                  </button>
+                  <div className="text-sm text-gray-500">
+                    💡 <strong>Conseil :</strong> Vous devez d'abord créer un établissement pour pouvoir créer des deals.
+                  </div>
                  <button
-                   onClick={() => window.location.href = '/dashboard/deals/create'}
+                    onClick={onCreateDeal}
                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                  >
                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -624,6 +621,7 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
                  showMyDeals={showMyDeals}
                  dealsStore={dealsStore}
                  loadDeals={loadDeals}
+                  onViewDeal={onViewDeal}
                />
              ))}
            </div>
@@ -663,7 +661,7 @@ const DealsList = ({ showMyDeals = false, showNearby = false, initialFilters = {
 };
 
 // Deal Card Component
-const DealCard = ({ deal, showMyDeals, dealsStore, loadDeals }) => {
+const DealCard = ({ deal, showMyDeals, dealsStore, loadDeals, onViewDeal }) => {
   const status = DealService.getDealStatus(deal);
   const statusColor = DealService.getStatusColor(status);
 
@@ -672,6 +670,7 @@ const DealCard = ({ deal, showMyDeals, dealsStore, loadDeals }) => {
       <div className="flex items-start space-x-4">
         {/* Deal Image */}
         <div className="flex-shrink-0">
+          {console.log('Deal image field:', deal.image, 'Type:', typeof deal.image, 'Truthy:', !!deal.image)}
           {deal.image ? (
             <img
               src={deal.image}
@@ -691,9 +690,26 @@ const DealCard = ({ deal, showMyDeals, dealsStore, loadDeals }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between">
             <div className="flex-1">
+              <div className="flex items-center space-x-2">
               <h4 className="text-lg font-medium text-gray-900 truncate">
                 {deal.title}
               </h4>
+                {deal.search_priority && deal.search_priority === 1 && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Exact Match
+                  </span>
+                )}
+                {deal.search_priority && deal.search_priority === 2 && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Title Match
+                  </span>
+                )}
+                {deal.search_priority && deal.search_priority === 3 && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    Description Match
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-gray-500 mt-1">
                 {deal.business_name} • {deal.category_name}
               </p>
@@ -736,14 +752,18 @@ const DealCard = ({ deal, showMyDeals, dealsStore, loadDeals }) => {
           <div className="mt-4 flex items-center space-x-3">
             {showMyDeals ? (
               <>
-                <Link
-                  to={`/dashboard/deals/${deal.id}/edit`}
+                <button
+                  onClick={() => {
+                    console.log('Edit clicked for deal:', deal.id, 'Full deal:', deal);
+                    window.location.href = `/dashboard/deals/${deal.id}/edit`;
+                  }}
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
                   Edit
-                </Link>
+                </button>
                 <button
                   onClick={() => {
+                    console.log('Delete clicked for deal:', deal.id, 'Full deal:', deal);
                     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce deal ?')) {
                       dealsStore.deleteDeal(deal.id).then(() => {
                         toast.success('Deal supprimé avec succès');
@@ -751,8 +771,8 @@ const DealCard = ({ deal, showMyDeals, dealsStore, loadDeals }) => {
                           loadDeals();
                         }
                       }).catch((error) => {
+                        console.error('Delete error:', error);
                         toast.error('Erreur lors de la suppression du deal');
-                        console.error('Delete deal error:', error);
                       });
                     }
                   }}
@@ -762,12 +782,12 @@ const DealCard = ({ deal, showMyDeals, dealsStore, loadDeals }) => {
                 </button>
               </>
             ) : (
-              <Link
-                to={`/deals/${deal.id}`}
+              <button
+                onClick={() => onViewDeal && onViewDeal(deal)}
                 className="text-sm text-blue-600 hover:text-blue-800 font-medium"
               >
                 View Details
-              </Link>
+              </button>
             )}
           </div>
         </div>

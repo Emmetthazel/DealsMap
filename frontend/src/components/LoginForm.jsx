@@ -62,17 +62,12 @@ const LoginForm = () => {
       return;
     }
     
-    // Debug: Log what data is being sent
-    console.log('Login form data:', formData);
-    console.log('Remember me:', rememberMe);
-    
     try {
       await login(formData, rememberMe);
       toast.success('Connexion réussie!');
       navigate('/dashboard'); // Redirect to dashboard after successful login
     } catch (error) {
       // Error is handled by the store
-      console.error('Login error:', error);
       toast.error(error.message);
     }
   };

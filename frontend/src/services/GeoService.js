@@ -285,7 +285,7 @@ class GeoService {
         });
       },
       (error) => {
-        console.error('Location watch error:', error);
+        // Silent error handling
       },
       { ...defaultOptions, ...options }
     );

@@ -29,11 +29,18 @@ class BusinessViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'address', 'city']
     ordering_fields = ['name', 'created_at', 'distance']
     ordering = ['-created_at']
+    
+    # Explicitly configure parsers to handle multipart form data
+    from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_serializer_class(self):
         """Use different serializers for different actions"""
         if self.action in ['retrieve', 'nearby']:
             return BusinessDetailSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            from .serializers import BusinessCreateSerializer
+            return BusinessCreateSerializer
         return BusinessSerializer
 
     def get_queryset(self):
@@ -67,6 +74,27 @@ class BusinessViewSet(viewsets.ModelViewSet):
         # Invalidate nearby cache since business was removed
         invalidate_nearby_cache()
         instance.delete()
+
+    @action(detail=False, methods=['get'], url_path='my-businesses')
+    def my_businesses(self, request):
+        """
+        Get businesses owned by the current user
+        """
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Filter businesses by owner
+        user_businesses = Business.objects.filter(
+            owner=request.user,
+            is_active=True
+        ).select_related('category')
+        
+        # Serialize the data
+        serializer = self.get_serializer(user_businesses, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='nearby')
     @cache_nearby_search(timeout=300)  # Cache for 5 minutes

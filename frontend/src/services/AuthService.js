@@ -129,12 +129,7 @@ class AuthService {
    */
   static async login(credentials, rememberMe = false) {
     try {
-      console.log('AuthService login - sending credentials:', credentials);
-      console.log('AuthService login - rememberMe:', rememberMe);
-      
       const response = await authAPI.post('/auth/login/', credentials);
-      
-      console.log('AuthService login - response:', response.data);
       
       // Store tokens in the appropriate storage
       if (response.data.tokens) {
@@ -160,7 +155,7 @@ class AuthService {
         });
       }
     } catch (error) {
-      console.error('Logout error:', error);
+      // Silent error handling
     } finally {
       // Clear tokens regardless of API call success
       clearTokens();

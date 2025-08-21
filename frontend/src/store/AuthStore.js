@@ -76,7 +76,7 @@ const useAuthStore = create(
         try {
           await AuthService.logout();
         } catch (error) {
-          console.error('Logout error:', error);
+          // Silent error handling
         } finally {
           set({
             user: null,
@@ -168,19 +168,13 @@ const useAuthStore = create(
        * This function checks if tokens exist and are valid
        */
       initializeAuth: async () => {
-        console.log('🔐 Initializing authentication...');
-        
         const isAuthenticated = AuthService.isAuthenticated();
         const rememberMe = AuthService.getStorageType() === 'local';
         
-        console.log('🔍 Auth check:', { isAuthenticated, rememberMe });
-        
         if (isAuthenticated) {
           try {
-            console.log('📡 Fetching user profile...');
             const user = await AuthService.getProfile();
             
-            console.log('✅ User authenticated:', user);
             set({
               user,
               isAuthenticated: true,
@@ -188,7 +182,6 @@ const useAuthStore = create(
               rememberMe,
             });
           } catch (error) {
-            console.log('❌ Profile fetch failed, clearing auth state:', error);
             // If profile fetch fails, clear auth state
             set({
               user: null,
@@ -199,7 +192,6 @@ const useAuthStore = create(
             AuthService.logout();
           }
         } else {
-          console.log('❌ No valid tokens found');
           set({
             user: null,
             isAuthenticated: false,

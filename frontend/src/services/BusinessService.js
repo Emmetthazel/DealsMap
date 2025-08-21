@@ -123,27 +123,22 @@ class BusinessService {
    */
   static async createBusiness(businessData, imageFile = null) {
     try {
-      const formData = new FormData();
+      console.log('BusinessService.createBusiness - received data:', businessData);
+      console.log('BusinessService.createBusiness - data keys:', Object.keys(businessData));
       
-      // Add business data
-      Object.keys(businessData).forEach(key => {
-        if (businessData[key] !== null && businessData[key] !== undefined) {
-          if (key === 'opening_hours') {
-            formData.append(key, JSON.stringify(businessData[key]));
-          } else {
-            formData.append(key, businessData[key]);
-          }
-        }
-      });
+      // Send as JSON instead of FormData for better reliability
+      const jsonData = { ...businessData };
       
-      // Add image if provided
-      if (imageFile) {
-        formData.append('image', imageFile);
+      // Convert opening_hours to JSON string if it exists
+      if (jsonData.opening_hours) {
+        jsonData.opening_hours = JSON.stringify(jsonData.opening_hours);
       }
       
-      const response = await businessAPI.post('/businesses/', formData, {
+      console.log('Sending JSON data:', jsonData);
+      
+      const response = await businessAPI.post('/businesses/', jsonData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
         },
       });
       
@@ -281,6 +276,19 @@ class BusinessService {
   static async getBusinessStats(businessId) {
     try {
       const response = await businessAPI.get(`/businesses/${businessId}/stats/`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get businesses owned by the current user
+   * @returns {Promise} - User's businesses
+   */
+  static async getMyBusinesses() {
+    try {
+      const response = await businessAPI.get('/businesses/my-businesses/');
       return response.data;
     } catch (error) {
       throw this.handleError(error);

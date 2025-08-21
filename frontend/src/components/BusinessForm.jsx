@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import BusinessService from '../services/BusinessService.js';
 import GeoService from '../services/GeoService.js';
+import { fetchCategories } from '../services/categoryService.js';
 
 const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -66,16 +67,21 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
 
   const loadCategories = async () => {
     try {
-      // This would call your category service
-      // For now, using mock data
-      setCategories([
-        { id: 1, name: 'Restaurant' },
-        { id: 2, name: 'Café' },
-        { id: 3, name: 'Retail' },
-        { id: 4, name: 'Services' }
-      ]);
+      console.log('Attempting to load categories...');
+      // Request all categories for business creation
+      const categoriesData = await fetchCategories('?all=true');
+      console.log('Loaded categories:', categoriesData);
+      console.log('Categories type:', typeof categoriesData);
+      console.log('Categories length:', categoriesData?.length);
+      if (categoriesData && categoriesData.length > 0) {
+        console.log('First category sample:', categoriesData[0]);
+      }
+      setCategories(categoriesData || []);
     } catch (error) {
       console.error('Failed to load categories:', error);
+      console.error('Error details:', error.message);
+      // Fallback to empty array if categories fail to load
+      setCategories([]);
     }
   };
 
@@ -155,6 +161,8 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
   };
 
   const validateForm = () => {
+    console.log('Validating form with data:', formData);
+    
     if (!formData.name.trim()) {
       setError('Business name is required.');
       return false;
@@ -170,23 +178,39 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
       return false;
     }
     
+    console.log('Checking coordinates - latitude:', formData.latitude, 'longitude:', formData.longitude);
     if (!formData.latitude || !formData.longitude) {
       setError('Location coordinates are required.');
       return false;
     }
     
-    if (!GeoService.validateCoordinates(parseFloat(formData.latitude), parseFloat(formData.longitude))) {
+    // Check if coordinates are valid numbers
+    const lat = parseFloat(formData.latitude);
+    const lng = parseFloat(formData.longitude);
+    
+    if (isNaN(lat) || isNaN(lng)) {
+      setError('Coordinates must be valid numbers.');
+      return false;
+    }
+    
+    if (!GeoService.validateCoordinates(lat, lng)) {
       setError('Invalid coordinates. Latitude must be between -90 and 90, longitude between -180 and 180.');
       return false;
     }
     
+    console.log('Form validation passed');
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('Form submission - formData:', formData);
+    console.log('Latitude value:', formData.latitude, 'Type:', typeof formData.latitude);
+    console.log('Longitude value:', formData.longitude, 'Type:', typeof formData.longitude);
+    
     if (!validateForm()) {
+      console.log('Form validation failed');
       return;
     }
     
@@ -195,11 +219,27 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
     setSuccess('');
     
     try {
+      // Clean up form data - keep category even if empty
+      const cleanedFormData = { ...formData };
+      console.log('Original formData:', formData);
+      console.log('Cleaned formData:', cleanedFormData);
+      
+      // Ensure coordinates are properly converted to numbers
+      const lat = parseFloat(formData.latitude);
+      const lng = parseFloat(formData.longitude);
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        throw new Error('Invalid coordinates. Please enter valid numbers for latitude and longitude.');
+      }
+      
       const businessData = {
-        ...formData,
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude)
+        ...cleanedFormData,
+        latitude: lat,
+        longitude: lng
       };
+      
+      console.log('Final businessData:', businessData);
+      console.log('Coordinates in businessData:', { lat: businessData.latitude, lng: businessData.longitude });
       
       let result;
       if (business) {
@@ -207,8 +247,8 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
         result = await BusinessService.updateBusiness(business.id, businessData, imageFile);
         setSuccess('Business updated successfully!');
       } else {
-        // Create new business
-        result = await BusinessService.createBusiness(businessData, imageFile);
+        // Create new business (without image for now - JSON only)
+        result = await BusinessService.createBusiness(businessData);
         setSuccess('Business created successfully!');
       }
       
@@ -270,7 +310,7 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
+              Category (Optional)
             </label>
             <select
               name="category"
@@ -278,7 +318,7 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Select a category</option>
+              <option value="">Select a category (optional)</option>
               {categories.map(category => (
                 <option key={category.id} value={category.id}>
                   {category.name}

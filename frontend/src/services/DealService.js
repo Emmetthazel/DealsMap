@@ -12,7 +12,6 @@ class DealService {
     const storage = this.getStorage();
     const token = storage.getItem('access_token');
     if (!token) {
-      console.error('No access token found in storage');
       throw new Error('No access token available');
     }
     return {
@@ -25,7 +24,6 @@ class DealService {
     const storage = this.getStorage();
     const token = storage.getItem('access_token');
     if (!token) {
-      console.error('No access token found in storage');
       throw new Error('No access token available');
     }
     return {
@@ -58,7 +56,6 @@ class DealService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching deals:', error);
       throw error;
     }
   }
@@ -86,7 +83,6 @@ class DealService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching nearby deals:', error);
       throw error;
     }
   }
@@ -111,7 +107,6 @@ class DealService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching my deals:', error);
       throw error;
     }
   }
@@ -130,6 +125,10 @@ class DealService {
 
       const url = queryParams.toString() ? `${this.baseURL}/search/?${queryParams.toString()}` : `${this.baseURL}/search/`;
       
+      console.log('DealService.searchDeals - URL:', url);
+      console.log('DealService.searchDeals - Query params:', queryParams.toString());
+      console.log('DealService.searchDeals - Search params received:', searchParams);
+      
       const response = await fetch(url, {
         headers: this.getHeaders(),
       });
@@ -140,7 +139,6 @@ class DealService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error searching deals:', error);
       throw error;
     }
   }
@@ -158,7 +156,6 @@ class DealService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching deal:', error);
       throw error;
     }
   }
@@ -215,7 +212,6 @@ class DealService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error creating deal:', error);
       throw error;
     }
   }
@@ -268,7 +264,31 @@ class DealService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error updating deal:', error);
+      throw error;
+    }
+  }
+
+  // Get a single deal by ID
+  async getDealById(id) {
+    try {
+      console.log('DealService.getDealById called with ID:', id);
+      console.log('Making request to:', `${this.baseURL}/${id}/`);
+      const response = await fetch(`${this.baseURL}/${id}/`, {
+        headers: this.getHeaders(),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Response data:', data);
+      return data;
+    } catch (error) {
+      console.error('DealService.getDealById error:', error);
       throw error;
     }
   }
@@ -287,7 +307,6 @@ class DealService {
 
       return true;
     } catch (error) {
-      console.error('Error deleting deal:', error);
       throw error;
     }
   }
@@ -305,7 +324,6 @@ class DealService {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching deal categories:', error);
       throw error;
     }
   }

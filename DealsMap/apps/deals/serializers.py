@@ -18,6 +18,9 @@ class DealSerializer(serializers.ModelSerializer):
     is_fully_used = serializers.BooleanField(read_only=True)
     remaining_uses = serializers.SerializerMethodField()
     
+    # Override image field to return full URL
+    image = serializers.SerializerMethodField()
+    
     class Meta:
         model = Deal
         fields = [
@@ -36,6 +39,14 @@ class DealSerializer(serializers.ModelSerializer):
     def get_remaining_uses(self, obj):
         """Get remaining uses for this deal"""
         return obj.get_remaining_uses()
+    
+    def get_image(self, obj):
+        """Get full URL for deal image"""
+        if obj.image:
+            # For development, hardcode the backend URL since frontend and backend are on different ports
+            backend_url = 'http://localhost:8000'
+            return f"{backend_url}{obj.image.url}"
+        return None
     
     def validate(self, data):
         """Custom validation for deal data"""
@@ -123,6 +134,9 @@ class DealListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='business.category.name', read_only=True)
     business_location = serializers.SerializerMethodField()
     
+    # Override image field to return full URL
+    image = serializers.SerializerMethodField()
+    
     class Meta:
         model = Deal
         fields = [
@@ -138,5 +152,13 @@ class DealListSerializer(serializers.ModelSerializer):
                 'latitude': obj.business.location.y,
                 'longitude': obj.business.location.x
             }
+        return None
+    
+    def get_image(self, obj):
+        """Get full URL for deal image"""
+        if obj.image:
+            # For development, hardcode the backend URL since frontend and backend are on different ports
+            backend_url = 'http://localhost:8000'
+            return f"{backend_url}{obj.image.url}"
         return None
 

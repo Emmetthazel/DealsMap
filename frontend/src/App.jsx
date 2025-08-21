@@ -70,33 +70,7 @@ const Dashboard = () => {
       </nav>
       
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {/* Sélecteur de catégories hiérarchique au-dessus du tableau de bord */}
-        <div className="mb-6 px-4 sm:px-0">
-          <div className="w-[35%] bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-gray-600">Chargement des catégories...</span>
-              </div>
-            ) : error ? (
-              <div className="text-red-600 text-center py-4">
-                Erreur lors du chargement des catégories: {error}
-              </div>
-            ) : (
-              <HierarchicalCategorySelector
-                categories={categories}
-                onSelect={(category) => {
-                  console.log("Catégorie sélectionnée:", category);
-                  // Ici vous pouvez ajouter la logique de filtrage du tableau de bord
-                }}
-                selectedCategories={null}
-                multiple={false}
-                placeholder="Choisir une catégorie pour filtrer..."
-                className="w-full"
-              />
-            )}
-          </div>
-        </div>
+
 
         {/* Main Dashboard Content */}
         <div className="px-4 py-6 sm:px-0">
@@ -190,7 +164,7 @@ const App = () => {
       try {
         await initializeAuth();
       } catch (error) {
-        console.error('App initialization failed:', error);
+        // Silent error handling
       } finally {
         setIsInitializing(false);
       }

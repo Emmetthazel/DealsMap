@@ -58,6 +58,10 @@ class BusinessCreateSerializer(serializers.ModelSerializer):
     """
     Serializer for creating new businesses
     """
+    # Add explicit fields for latitude and longitude since they're @property fields
+    latitude = serializers.FloatField(write_only=True)
+    longitude = serializers.FloatField(write_only=True)
+    
     class Meta:
         model = Business
         fields = [
@@ -67,9 +71,65 @@ class BusinessCreateSerializer(serializers.ModelSerializer):
         ]
     
     def create(self, validated_data):
+        # Debug: print what we're receiving
+        print(f"DEBUG: Received data: {validated_data}")
+        print(f"DEBUG: Data type: {type(validated_data)}")
+        print(f"DEBUG: Data keys: {list(validated_data.keys())}")
+        
         # Set the owner to the current user
         validated_data['owner'] = self.context['request'].user
+        
+        # Convert latitude and longitude to location Point
+        latitude = validated_data.pop('latitude', None)
+        longitude = validated_data.pop('longitude', None)
+        
+        print(f"DEBUG: Latitude: {latitude}, Longitude: {longitude}")
+        print(f"DEBUG: Latitude type: {type(latitude)}, Longitude type: {type(longitude)}")
+        
+        if latitude is not None and longitude is not None:
+            try:
+                from django.contrib.gis.geos import Point
+                validated_data['location'] = Point(longitude, latitude, srid=4326)
+                print(f"DEBUG: Created Point: {validated_data['location']}")
+            except Exception as e:
+                print(f"DEBUG: Error creating Point: {e}")
+                raise serializers.ValidationError(f"Invalid coordinates: {e}")
+        else:
+            print("DEBUG: No latitude/longitude provided")
+            raise serializers.ValidationError("Latitude and longitude are required")
+        
+        # Keep category field - let the model handle validation
+        if 'category' in validated_data:
+            print(f"DEBUG: Category field present: {validated_data['category']}")
+            if validated_data['category'] == '' or validated_data['category'] is None:
+                validated_data['category'] = None  # Set to None instead of removing
+                print("DEBUG: Set category to None")
+            else:
+                print(f"DEBUG: Category value: {validated_data['category']}")
+        
+        # Handle opening_hours if it's a JSON string
+        if 'opening_hours' in validated_data and isinstance(validated_data['opening_hours'], str):
+            try:
+                import json
+                validated_data['opening_hours'] = json.loads(validated_data['opening_hours'])
+                print("DEBUG: Parsed opening_hours JSON string")
+            except json.JSONDecodeError as e:
+                print(f"DEBUG: Error parsing opening_hours JSON: {e}")
+                validated_data['opening_hours'] = {}
+        
+        print(f"DEBUG: Final validated_data: {validated_data}")
         return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        # Convert latitude and longitude to location Point if provided
+        latitude = validated_data.pop('latitude', None)
+        longitude = validated_data.pop('longitude', None)
+        
+        if latitude is not None and longitude is not None:
+            from django.contrib.gis.geos import Point
+            validated_data['location'] = Point(longitude, latitude, srid=4326)
+        
+        return super().update(instance, validated_data)
     
     def validate_latitude(self, value):
         """Validate latitude is between -90 and 90"""

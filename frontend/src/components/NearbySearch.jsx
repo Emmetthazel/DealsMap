@@ -44,7 +44,7 @@ const NearbySearch = ({ onBusinessSelect = null }) => {
         setCacheInfo(data.cache_info);
       }
     } catch (error) {
-      console.error('Failed to load cache info:', error);
+      // Silent error handling
     }
   };
 
@@ -59,7 +59,7 @@ const NearbySearch = ({ onBusinessSelect = null }) => {
         { id: 5, name: 'Entertainment' }
       ]);
     } catch (error) {
-      console.error('Failed to load categories:', error);
+      // Silent error handling
     }
   };
 

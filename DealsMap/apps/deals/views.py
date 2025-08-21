@@ -58,6 +58,12 @@ class DealViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    def get_serializer_context(self):
+        """Add request to serializer context for building absolute URLs"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     @action(detail=False, methods=['get'], url_path='nearby')
     def nearby(self, request):
@@ -152,6 +158,26 @@ class DealViewSet(viewsets.ModelViewSet):
             'business', 'business__category'
         )
         
+        # Owner filtering for authenticated users
+        owner_filter = request.query_params.get('owner')
+        if owner_filter == 'me' and request.user.is_authenticated:
+            queryset = queryset.filter(business__owner=request.user)
+            # For user's own deals, show all deals (including inactive ones)
+        else:
+            # For public search, only show active deals
+            queryset = queryset.filter(is_active=True)
+        
+        # Category filtering
+        category_filter = request.query_params.get('category')
+        print(f"DEBUG: Category filter received: {category_filter}")
+        print(f"DEBUG: Queryset count before category filter: {queryset.count()}")
+        if category_filter:
+            print(f"DEBUG: Filtering by category ID: {category_filter}")
+            queryset = queryset.filter(business__category__id=category_filter)
+            print(f"DEBUG: Queryset count after category filter: {queryset.count()}")
+            print(f"DEBUG: Category filter type: {type(category_filter)}")
+            print(f"DEBUG: Category filter value: '{category_filter}'")
+        
         # Price range filtering
         min_price = request.query_params.get('min_price')
         max_price = request.query_params.get('max_price')
@@ -189,8 +215,33 @@ class DealViewSet(viewsets.ModelViewSet):
             except ValueError:
                 pass
         
-        # Apply search and ordering
-        queryset = self.filter_queryset(queryset)
+        # Custom search logic for more precise results
+        search_query = request.query_params.get('search')
+        if search_query:
+            from django.db.models import Q, Case, When, IntegerField
+            
+            # Create a more targeted search query
+            search_q = Q(title__icontains=search_query) | Q(description__icontains=search_query)
+            
+            # Add exact title match with higher priority
+            exact_title_q = Q(title__iexact=search_query)
+            
+            # Combine queries and annotate with priority for ordering
+            queryset = queryset.filter(search_q | exact_title_q).annotate(
+                search_priority=Case(
+                    When(exact_title_q, then=1),  # Exact title match gets highest priority
+                    When(Q(title__icontains=search_query), then=2),  # Title contains gets medium priority
+                    When(Q(description__icontains=search_query), then=3),  # Description contains gets lowest priority
+                    default=4,
+                    output_field=IntegerField(),
+                )
+            ).order_by('search_priority', '-created_at')
+        else:
+            # Apply default ordering if no search
+            queryset = self.filter_queryset(queryset)
+        
+        print(f"DEBUG: Final queryset count: {queryset.count()}")
+        print(f"DEBUG: Final queryset SQL: {queryset.query}")
         
         page = self.paginate_queryset(queryset)
         if page is not None:
