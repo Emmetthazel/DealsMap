@@ -199,9 +199,9 @@ const DealForm = ({ deal = null, onSubmit, onCancel }) => {
         const result = await response.json();
         if (onSubmit) {
           onSubmit(result);
-        } else {
-          navigate('/dashboard/deals');
         }
+        // Always navigate back to deals dashboard after successful submission
+        navigate('/dashboard/deals');
       } else {
         const errorData = await response.json();
         setErrors(errorData);

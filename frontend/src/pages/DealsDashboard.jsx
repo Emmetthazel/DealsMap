@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import DealsList from '../components/DealsList';
 import DealForm from '../components/DealForm';
 import BusinessForm from '../components/BusinessForm';
@@ -11,20 +11,45 @@ const DealsDashboard = () => {
   const [showBusinessForm, setShowBusinessForm] = useState(false);
   const [editingDeal, setEditingDeal] = useState(null);
   const [viewingDeal, setViewingDeal] = useState(null);
+  const [viewingDealLoading, setViewingDealLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [forceRefresh, setForceRefresh] = useState(0);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Function to refresh deals list
+  const refreshDeals = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
+  // Function to force refresh all tabs
+  const forceRefreshAllTabs = () => {
+    setForceRefresh(prev => prev + 1);
+  };
 
   // Handle form submission
   const handleDealSubmit = () => {
     setShowCreateForm(false);
     setEditingDeal(null);
-    // Refresh the deals list
-    window.location.reload();
+    
+    // If we're on the create route, navigate back to deals management
+    if (location.pathname === '/dashboard/deals/create') {
+      navigate('/dashboard/deals');
+    }
+    
+    // Force refresh all tabs to show updated deals list
+    forceRefreshAllTabs();
   };
 
   // Handle form cancellation
   const handleFormCancel = () => {
     setShowCreateForm(false);
     setEditingDeal(null);
+    
+    // If we're on the create route, navigate back to deals management
+    if (location.pathname === '/dashboard/deals/create') {
+      navigate('/dashboard/deals');
+    }
   };
 
   // Handle deal details close
@@ -35,13 +60,24 @@ const DealsDashboard = () => {
   // Handle business form success
   const handleBusinessFormSuccess = (business) => {
     setShowBusinessForm(false);
-    // Refresh the page to show the new business
-    window.location.reload();
+    
+    // If we're on the create route, navigate back to deals management
+    if (location.pathname === '/dashboard/deals/create') {
+      navigate('/dashboard/deals');
+    }
+    
+    // Force refresh all tabs to show updated business data
+    forceRefreshAllTabs();
   };
 
   // Handle business form cancel
   const handleBusinessFormCancel = () => {
     setShowBusinessForm(false);
+    
+    // If we're on the create route, navigate back to deals management
+    if (location.pathname === '/dashboard/deals/create') {
+      navigate('/dashboard/deals');
+    }
   };
 
   // Handle edit deal
@@ -51,13 +87,31 @@ const DealsDashboard = () => {
   };
 
   // Handle view deal details
-  const handleViewDeal = (dealData) => {
-    setViewingDeal(dealData);
+  const handleViewDeal = async (dealData) => {
+    console.log('handleViewDeal called with deal data:', dealData);
+    console.log('Deal fields available:', Object.keys(dealData));
+    console.log('Description:', dealData.description);
+    console.log('Max uses:', dealData.max_uses);
+    
+    try {
+      setViewingDealLoading(true);
+      // Fetch the complete deal data to ensure all fields are populated
+      const completeDealData = await DealService.getDealById(dealData.id);
+      console.log('Complete deal data for viewing:', completeDealData);
+      console.log('Complete deal fields:', Object.keys(completeDealData));
+      setViewingDeal(completeDealData);
+    } catch (error) {
+      console.error('Error fetching complete deal data:', error);
+      // Fallback to the original deal data if fetch fails
+      setViewingDeal(dealData);
+    } finally {
+      setViewingDealLoading(false);
+    }
   };
 
   // Handle delete deal
   const handleDeleteDeal = async (dealId) => {
-    if (window.confirm('Are you sure you want to delete this deal?')) {
+    if (window.confirm('Are you sure you want to deactivate this deal? It will no longer be visible to customers but can be reactivated later.')) {
       try {
         const storageType = localStorage.getItem('auth_storage_type');
         const storage = storageType === 'local' ? localStorage : sessionStorage;
@@ -71,40 +125,86 @@ const DealsDashboard = () => {
         });
 
         if (response.ok) {
-          // Refresh the deals list
-          window.location.reload();
+          // Show success message for deactivation
+          alert('Deal deactivated successfully! It will no longer be visible to customers.');
+          // Force refresh all tabs to show updated deal status
+          forceRefreshAllTabs();
         } else {
-          alert('Failed to delete deal');
+          alert('Failed to deactivate deal. Please try again.');
         }
       } catch (error) {
-        alert('Error deleting deal');
+        console.error('Error deactivating deal:', error);
+        alert('An error occurred while deactivating the deal. Please try again.');
       }
+    }
+  };
+
+  // Handle reactivate deal
+  const handleReactivateDeal = async (dealId) => {
+    try {
+      const storageType = localStorage.getItem('auth_storage_type');
+      const storage = storageType === 'local' ? localStorage : sessionStorage;
+      const token = storage.getItem('access_token');
+      
+      const response = await fetch(`/api/deals/${dealId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          is_active: true
+        }),
+      });
+
+      if (response.ok) {
+        // Show success message for reactivation
+        alert('Deal reactivated successfully! It is now visible to customers again.');
+        // Force refresh all tabs to show updated deal status
+        forceRefreshAllTabs();
+      } else {
+        alert('Failed to reactivate deal. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error reactivating deal:', error);
+      alert('An error occurred while reactivating the deal. Please try again.');
     }
   };
 
   // Check if we're editing a deal from URL
   React.useEffect(() => {
     console.log('Location changed:', location.pathname);
-          const fetchDealForEdit = async () => {
-        const pathParts = location.pathname.split('/');
-        console.log('Path parts:', pathParts);
-        if (pathParts.includes('edit') && pathParts.includes('deals')) {
-          const dealId = pathParts[pathParts.length - 2];
-          // Fetch deal data and show edit form
-          console.log('Fetching deal for edit:', dealId);
-          console.log('About to call DealService.getDealById...');
-          try {
-            const dealData = await DealService.getDealById(dealId);
-            console.log('Edit deal data received:', dealData);
-            setEditingDeal(dealData);
-            setShowCreateForm(true);
-          } catch (error) {
-            console.error('Error fetching deal for edit:', error);
-            console.error('Error details:', error.message, error.stack);
-            // Silent error handling
-          }
+    const fetchDealForEdit = async () => {
+      const pathParts = location.pathname.split('/');
+      console.log('Path parts:', pathParts);
+      
+      // Check if we're on the create deals route
+      if (pathParts.includes('create') && pathParts.includes('deals')) {
+        console.log('On create deals route, showing create form');
+        setShowCreateForm(true);
+        setEditingDeal(null);
+        setViewingDeal(null);
+        return;
+      }
+      
+      // Check if we're editing a deal from URL
+      if (pathParts.includes('edit') && pathParts.includes('deals')) {
+        const dealId = pathParts[pathParts.length - 2];
+        // Fetch deal data and show edit form
+        console.log('Fetching deal for edit:', dealId);
+        console.log('About to call DealService.getDealById...');
+        try {
+          const dealData = await DealService.getDealById(dealId);
+          console.log('Edit deal data received:', dealData);
+          setEditingDeal(dealData);
+          setShowCreateForm(true);
+        } catch (error) {
+          console.error('Error fetching deal for edit:', error);
+          console.error('Error details:', error.message, error.stack);
+          // Silent error handling
         }
-      };
+      }
+    };
     
     fetchDealForEdit();
   }, [location]);
@@ -123,7 +223,7 @@ const DealsDashboard = () => {
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Back to Dashboard
+              {editingDeal ? 'Back to Dashboard' : 'Back to Deals Management'}
             </button>
           </div>
           <DealForm
@@ -148,7 +248,7 @@ const DealsDashboard = () => {
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Back to Dashboard
+              Back to Deals Management
             </button>
           </div>
           <BusinessForm
@@ -172,74 +272,118 @@ const DealsDashboard = () => {
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Back to Dashboard
+              Back to Deals Management
             </button>
           </div>
           
           {/* Deal Details View */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="p-6">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{viewingDeal.title}</h1>
-                  <p className="text-lg text-gray-600 mt-2">{viewingDeal.business_name}</p>
-                  <p className="text-sm text-gray-500 mt-1">{viewingDeal.category_name}</p>
+              {viewingDealLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Loading deal details...</span>
                 </div>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  viewingDeal.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {viewingDeal.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
-                  <p className="text-gray-700">{viewingDeal.description}</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Pricing</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Original Price:</span>
-                      <span className="text-gray-900 font-medium">{viewingDeal.original_price}</span>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between mb-6">
+                    <div>
+                      <h1 className="text-3xl font-bold text-gray-900">{viewingDeal.title}</h1>
+                      <p className="text-lg text-gray-600 mt-2">{viewingDeal.business_name}</p>
+                      <p className="text-sm text-gray-500 mt-1">{viewingDeal.category_name}</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Deal Price:</span>
-                      <span className="text-green-600 font-bold text-lg">{viewingDeal.deal_price}</span>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      viewingDeal.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {viewingDeal.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+                      <p className="text-gray-700">
+                        {viewingDeal.description || 'No description available'}
+                      </p>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Discount:</span>
-                      <span className="text-blue-600 font-medium">{viewingDeal.discount_percentage}%</span>
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Pricing</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Original Price:</span>
+                          <span className="text-gray-900 font-medium">
+                            {viewingDeal.original_price ? `$${viewingDeal.original_price}` : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Deal Price:</span>
+                          <span className="text-green-600 font-bold text-lg">
+                            {viewingDeal.deal_price ? `$${viewingDeal.deal_price}` : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Discount:</span>
+                          <span className="text-blue-600 font-medium">
+                            {viewingDeal.discount_percentage ? `${viewingDeal.discount_percentage}%` : 'N/A'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Start Date</h4>
-                    <p className="text-gray-900">{new Date(viewingDeal.start_date).toLocaleDateString()}</p>
+                  
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500">Start Date</h4>
+                        <p className="text-gray-900">
+                          {viewingDeal.start_date ? new Date(viewingDeal.start_date).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500">End Date</h4>
+                        <p className="text-gray-900">
+                          {viewingDeal.end_date ? new Date(viewingDeal.end_date).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500">Max Uses</h4>
+                        <p className="text-gray-900">
+                          {viewingDeal.max_uses || 'Unlimited'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Usage Information */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-500">Current Uses</h4>
+                          <p className="text-gray-900">
+                            {viewingDeal.current_uses !== undefined ? viewingDeal.current_uses : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-500">Remaining Uses</h4>
+                          <p className="text-gray-900">
+                            {viewingDeal.max_uses && viewingDeal.current_uses !== undefined 
+                              ? Math.max(0, viewingDeal.max_uses - viewingDeal.current_uses)
+                              : 'N/A'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {viewingDeal.conditions && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Terms & Conditions</h4>
+                        <p className="text-gray-700 text-sm">{viewingDeal.conditions}</p>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">End Date</h4>
-                    <p className="text-gray-900">{new Date(viewingDeal.end_date).toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Max Uses</h4>
-                    <p className="text-gray-900">{viewingDeal.max_uses}</p>
-                  </div>
-                </div>
-                
-                {viewingDeal.conditions && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Terms & Conditions</h4>
-                    <p className="text-gray-700 text-sm">{viewingDeal.conditions}</p>
-                  </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -250,24 +394,35 @@ const DealsDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Deals Dashboard</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Manage your promotional deals and track performance
-              </p>
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Gestion des Deals</h1>
+                <p className="mt-2 text-gray-600">Créez et gérez vos deals et établissements</p>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowBusinessForm(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  Créer un établissement
+                </button>
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Créer un deal
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Create New Deal
-            </button>
           </div>
         </div>
       </div>
@@ -285,6 +440,16 @@ const DealsDashboard = () => {
               }`}
             >
               My Deals
+            </button>
+            <button
+              onClick={() => setActiveTab('business')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'business'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Gestion Établissement
             </button>
             <button
               onClick={() => setActiveTab('nearby')}
@@ -330,19 +495,6 @@ const DealsDashboard = () => {
                 </p>
               </div>
             </div>
-            
-            {/* Business Creation Button - Always Visible */}
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowBusinessForm(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                Créer un établissement
-              </button>
-            </div>
           </div>
         </div>
 
@@ -352,9 +504,17 @@ const DealsDashboard = () => {
             showMyDeals={true}
             onEditDeal={handleEditDeal}
             onDeleteDeal={handleDeleteDeal}
-            onCreateDeal={() => setShowCreateForm(true)}
-            onCreateBusiness={() => setShowBusinessForm(true)}
             onViewDeal={handleViewDeal}
+            refreshKey={refreshKey}
+            onReactivateDeal={handleReactivateDeal}
+            forceRefresh={forceRefresh}
+          />
+        )}
+        
+        {activeTab === 'business' && (
+          <BusinessForm
+            onSuccess={handleBusinessFormSuccess}
+            onCancel={handleBusinessFormCancel}
           />
         )}
         
@@ -362,8 +522,12 @@ const DealsDashboard = () => {
           <DealsList
             showNearby={true}
             initialFilters={{ radius: 10 }}
-            onCreateDeal={() => setShowCreateForm(true)}
+            onEditDeal={handleEditDeal}
+            onDeleteDeal={handleDeleteDeal}
             onViewDeal={handleViewDeal}
+            refreshKey={refreshKey}
+            onReactivateDeal={handleReactivateDeal}
+            forceRefresh={forceRefresh}
           />
         )}
         
@@ -371,29 +535,14 @@ const DealsDashboard = () => {
           <DealsList
             showMyDeals={false}
             showNearby={false}
-            onCreateDeal={() => setShowCreateForm(true)}
+            onEditDeal={handleEditDeal}
+            onDeleteDeal={handleDeleteDeal}
             onViewDeal={handleViewDeal}
+            refreshKey={refreshKey}
+            onReactivateDeal={handleReactivateDeal}
+            forceRefresh={forceRefresh}
           />
         )}
-      </div>
-
-      {/* Quick Actions Floating Button */}
-      <div className="fixed bottom-8 right-8">
-        <div className="relative group">
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-110"
-          >
-            <svg className="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          </button>
-          
-          {/* Tooltip */}
-          <div className="absolute bottom-full right-0 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-            Create New Deal
-          </div>
-        </div>
       </div>
     </div>
   );

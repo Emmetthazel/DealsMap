@@ -49,7 +49,7 @@ class DealViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         
         # Filter by active deals only for public endpoints
-        if self.action in ['list', 'nearby']:
+        if self.action in ['list', 'nearby', 'search']:
             queryset = queryset.filter(is_active=True)
         
         # Filter by business owner if authenticated
@@ -134,6 +134,8 @@ class DealViewSet(viewsets.ModelViewSet):
         status_filter = request.query_params.get('status')
         if status_filter == 'active':
             queryset = queryset.filter(is_active=True)
+        elif status_filter == 'inactive':
+            queryset = queryset.filter(is_active=False)
         elif status_filter == 'expired':
             queryset = queryset.filter(end_date__lt=timezone.now())
         elif status_filter == 'upcoming':
@@ -147,7 +149,6 @@ class DealViewSet(viewsets.ModelViewSet):
         serializer = DealSerializer(queryset, many=True)
         return Response(serializer.data)
     
-    @method_decorator(cache_page(60 * 3))  # Cache for 3 minutes
     @action(detail=False, methods=['get'], url_path='search')
     def search(self, request):
         """
@@ -161,11 +162,12 @@ class DealViewSet(viewsets.ModelViewSet):
         # Owner filtering for authenticated users
         owner_filter = request.query_params.get('owner')
         if owner_filter == 'me' and request.user.is_authenticated:
-            queryset = queryset.filter(business__owner=request.user)
-            # For user's own deals, show all deals (including inactive ones)
-        else:
-            # For public search, only show active deals
-            queryset = queryset.filter(is_active=True)
+            # For user's own deals, we need to show all deals (including inactive ones)
+            # So we need to override the is_active filter from get_queryset
+            queryset = queryset.model.objects.filter(
+                business__owner=request.user
+            ).select_related('business', 'business__category')
+        # Note: For public search, get_queryset already filters by is_active=True
         
         # Category filtering
         category_filter = request.query_params.get('category')
@@ -242,6 +244,9 @@ class DealViewSet(viewsets.ModelViewSet):
         
         print(f"DEBUG: Final queryset count: {queryset.count()}")
         print(f"DEBUG: Final queryset SQL: {queryset.query}")
+        print(f"DEBUG: Sample deals from queryset:")
+        for deal in queryset[:3]:  # Show first 3 deals for debugging
+            print(f"  - Deal ID: {deal.id}, Title: {deal.title}, is_active: {deal.is_active}")
         
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -251,17 +256,24 @@ class DealViewSet(viewsets.ModelViewSet):
         serializer = DealListSerializer(page, many=True)
         return Response(serializer.data)
     
-    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     @action(detail=False, methods=['get'])
     def categories(self, request):
         """
-        Get all categories that have active deals
+        Get categories based on user authentication status
+        - Public users: only categories with active deals
+        - Authenticated users: all categories (so they can see categories even when deals are inactive)
         """
         from apps.categories.models import Category
         
-        categories = Category.objects.filter(
-            businesses__deals__is_active=True
-        ).distinct().values('id', 'name')
+        if request.user.is_authenticated:
+            # For authenticated users, show all categories
+            # This allows business owners to see categories even when their deals are inactive
+            categories = Category.objects.all().values('id', 'name')
+        else:
+            # For public users, only show categories with active deals
+            categories = Category.objects.filter(
+                businesses__deals__is_active=True
+            ).distinct().values('id', 'name')
         
         return Response(categories)
 

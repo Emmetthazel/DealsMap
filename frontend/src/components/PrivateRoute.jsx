@@ -1,34 +1,14 @@
-import { Navigate, useLocation } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import useAuthStore from '../store/AuthStore';
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuthStore();
-  const location = useLocation();
+  const { isAuthenticated } = useAuthStore();
 
-  // Show loading spinner while checking authentication
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Vérification...
-          </h2>
-          <p className="text-gray-600">
-            Vérification de votre authentification
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" replace />;
   }
 
-  // Show children if authenticated
   return children;
 };
 
