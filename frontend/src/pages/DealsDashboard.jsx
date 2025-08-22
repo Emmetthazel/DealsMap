@@ -187,6 +187,15 @@ const DealsDashboard = () => {
         return;
       }
       
+      // If we're on the main deals route (not create), hide the create form
+      if (pathParts.includes('deals') && !pathParts.includes('create') && !pathParts.includes('edit')) {
+        console.log('On main deals route, hiding create form');
+        setShowCreateForm(false);
+        setEditingDeal(null);
+        setViewingDeal(null);
+        return;
+      }
+      
       // Check if we're editing a deal from URL
       if (pathParts.includes('edit') && pathParts.includes('deals')) {
         const dealId = pathParts[pathParts.length - 2];
@@ -207,7 +216,7 @@ const DealsDashboard = () => {
     };
     
     fetchDealForEdit();
-  }, [location]);
+  }, [location.pathname]);
 
 
 

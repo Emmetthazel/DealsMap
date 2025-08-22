@@ -24,49 +24,65 @@ const Sidebar = () => {
       path: '/',
       icon: 'fas fa-home',
       label: 'Accueil',
-      public: true
+      public: true,
+      ownerOnly: true
     },
     {
       path: '/map',
       icon: 'fas fa-map',
       label: 'Carte Interactive',
-      public: true
+      public: true,
+      ownerOnly: false
     },
     {
       path: '/deals',
       icon: 'fas fa-tags',
       label: 'Liste des Deals',
-      public: true
+      public: true,
+      ownerOnly: false
     },
     {
       path: '/dashboard',
       icon: 'fas fa-tachometer-alt',
       label: 'Dashboard Propriétaire',
-      public: false
+      public: false,
+      ownerOnly: true
     },
     {
       path: '/dashboard/deals',
       icon: 'fas fa-tags',
       label: 'Gérer mes Deals',
-      public: false
+      public: false,
+      ownerOnly: true
     },
     {
       path: '/dashboard/deals/create',
       icon: 'fas fa-percent',
       label: 'Créer un Deal',
-      public: false
+      public: false,
+      ownerOnly: true
     },
     {
       path: '/dashboard/business',
       icon: 'fas fa-store',
       label: 'Mon Établissement',
-      public: false
+      public: false,
+      ownerOnly: true
     },
     {
       path: '/profile',
       icon: 'fas fa-user',
       label: 'Mon Profil',
-      public: false
+      public: false,
+      ownerOnly: false
+    },
+    {
+      path: '/client-dashboard',
+      icon: 'fas fa-tachometer-alt',
+      label: 'Dashboard Client',
+      public: false,
+      ownerOnly: false,
+      clientOnly: true
     }
   ];
 
@@ -92,6 +108,12 @@ const Sidebar = () => {
     
     // Don't show login/register to authenticated users
     if (item.public && isAuthenticated && (item.path === '/login' || item.path === '/register')) return null;
+    
+    // Hide owner-only items for client users
+    if (item.ownerOnly && user?.user_type !== 'owner') return null;
+    
+    // Hide client-only items for owner users
+    if (item.clientOnly && user?.user_type !== 'client') return null;
 
     return (
       <div
@@ -132,7 +154,9 @@ const Sidebar = () => {
             </div>
             <div className="user-details">
               <div className="user-name">{user?.first_name || 'Utilisateur'}</div>
-              <div className="user-role">Propriétaire</div>
+              <div className="user-role">
+                {user?.user_type === 'owner' ? 'Propriétaire' : 'Client'}
+              </div>
             </div>
           </div>
           
