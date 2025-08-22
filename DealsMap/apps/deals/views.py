@@ -237,10 +237,67 @@ class DealViewSet(viewsets.ModelViewSet):
                     default=4,
                     output_field=IntegerField(),
                 )
-            ).order_by('search_priority', '-created_at')
+            )
+            # Note: We don't apply order_by here anymore, sorting will be applied later
+            print(f"DEBUG: Search applied, search_priority annotated")
         else:
             # Apply default ordering if no search
             queryset = self.filter_queryset(queryset)
+        
+        # Apply sorting AFTER search logic (so user sorting takes precedence)
+        sort_filter = request.query_params.get('sort')
+        print(f"DEBUG: Sort filter received: {sort_filter}")
+        if sort_filter:
+            print(f"DEBUG: Applying sorting: {sort_filter}")
+            if sort_filter == 'expiry':
+                # Sort by expiration date (closest to expiring first)
+                if search_query:
+                    # If there's a search, combine search priority with expiry sorting
+                    queryset = queryset.order_by('search_priority', 'end_date')
+                else:
+                    queryset = queryset.order_by('end_date')
+                print(f"DEBUG: Sorted by expiry date")
+            elif sort_filter == 'discount':
+                # Sort by discount percentage (highest discount first)
+                if search_query:
+                    # If there's a search, combine search priority with discount sorting
+                    queryset = queryset.order_by('search_priority', '-discount_percentage')
+                else:
+                    queryset = queryset.order_by('-discount_percentage')
+                print(f"DEBUG: Sorted by discount percentage")
+            elif sort_filter == 'rating':
+                # Sort by rating (highest rating first)
+                # Note: Rating field doesn't exist yet, so use creation date as fallback
+                if search_query:
+                    # If there's a search, combine search priority with creation date sorting
+                    queryset = queryset.order_by('search_priority', '-created_at')
+                else:
+                    queryset = queryset.order_by('-created_at')
+                print(f"DEBUG: Rating sorting not implemented yet, using creation date")
+            elif sort_filter == 'price':
+                # Sort by deal price (lowest price first)
+                if search_query:
+                    # If there's a search, combine search priority with price sorting
+                    queryset = queryset.order_by('search_priority', 'deal_price')
+                else:
+                    queryset = queryset.order_by('deal_price')
+                print(f"DEBUG: Sorted by deal price")
+            else:
+                # Default sorting by creation date (newest first)
+                if search_query:
+                    # If there's a search, combine search priority with creation date sorting
+                    queryset = queryset.order_by('search_priority', '-created_at')
+                else:
+                    queryset = queryset.order_by('-created_at')
+                print(f"DEBUG: Default sorting by creation date")
+        else:
+            # Default sorting by creation date (newest first)
+            if search_query:
+                # If there's a search, use search priority first, then creation date
+                queryset = queryset.order_by('search_priority', '-created_at')
+            else:
+                queryset = queryset.order_by('-created_at')
+            print(f"DEBUG: No sort specified, using default sorting")
         
         print(f"DEBUG: Final queryset count: {queryset.count()}")
         print(f"DEBUG: Final queryset SQL: {queryset.query}")

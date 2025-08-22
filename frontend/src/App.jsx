@@ -7,6 +7,7 @@ import DealsDashboard from './pages/DealsDashboard';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import BusinessForm from './components/BusinessForm';
+import DealsList from './pages/DealsList';
 import Layout from './components/Layout';
 import { PrivateRoute, OwnerRoute } from './components/PrivateRoute';
 import useAuthStore from './store/AuthStore';
@@ -175,6 +176,86 @@ const App = () => {
                 </div>
               </Layout>
             </PrivateRoute>
+          } 
+        />
+
+        {/* Public deals list route */}
+        <Route 
+          path="/deals" 
+          element={
+            <Layout>
+              <DealsList />
+            </Layout>
+          } 
+        />
+
+        {/* Interactive map route */}
+        <Route 
+          path="/map" 
+          element={
+            <Layout>
+              <div className="min-h-screen bg-gray-50 p-6">
+                <div className="max-w-7xl mx-auto">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-6">
+                    <i className="fas fa-map mr-3"></i>
+                    Carte Interactive
+                  </h1>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <p className="text-gray-600">Carte interactive des deals et établissements</p>
+                    <p className="text-gray-500 text-sm mt-2">Fonctionnalité en cours de développement...</p>
+                  </div>
+                </div>
+              </div>
+            </Layout>
+          } 
+        />
+
+        {/* Public home route */}
+        <Route 
+          path="/home" 
+          element={
+            <Layout>
+              <div className="min-h-screen bg-gray-50 p-6">
+                <div className="max-w-7xl mx-auto">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-6">
+                    <i className="fas fa-home mr-3"></i>
+                    Bienvenue sur DealsMap
+                  </h1>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Découvrez les Meilleurs Deals</h3>
+                      <p className="text-gray-600 mb-4">Trouvez des offres exceptionnelles près de chez vous</p>
+                      <a 
+                        href="/deals"
+                        className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                      >
+                        Voir les Deals
+                      </a>
+                    </div>
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Explorez la Carte</h3>
+                      <p className="text-gray-600 mb-4">Visualisez les deals sur une carte interactive</p>
+                      <a 
+                        href="/map"
+                        className="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                      >
+                        Ouvrir la Carte
+                      </a>
+                    </div>
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Créez votre Établissement</h3>
+                      <p className="text-gray-600 mb-4">Propriétaires, rejoignez DealsMap pour promouvoir vos offres</p>
+                      <a 
+                        href="/register"
+                        className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
+                      >
+                        S'inscrire
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Layout>
           } 
         />
 

@@ -21,11 +21,11 @@ const Sidebar = () => {
 
   const navItems = [
     {
-      path: '/',
+      path: '/home',
       icon: 'fas fa-home',
       label: 'Accueil',
       public: true,
-      ownerOnly: true
+      ownerOnly: false
     },
     {
       path: '/map',

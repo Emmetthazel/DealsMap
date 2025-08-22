@@ -143,6 +143,40 @@ class DealService {
     }
   }
 
+  // Public search deals (no authentication required)
+  async searchDealsPublic(searchParams = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      // Add search parameters
+      Object.keys(searchParams).forEach(key => {
+        if (searchParams[key] !== null && searchParams[key] !== undefined && searchParams[key] !== '') {
+          queryParams.append(key, searchParams[key]);
+        }
+      });
+
+      const url = queryParams.toString() ? `${this.baseURL}/search/?${queryParams.toString()}` : `${this.baseURL}/search/`;
+      
+      console.log('DealService.searchDealsPublic - URL:', url);
+      console.log('DealService.searchDealsPublic - Query params:', queryParams.toString());
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Get a single deal by ID
   async getDeal(id) {
     try {
