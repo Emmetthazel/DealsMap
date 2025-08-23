@@ -65,7 +65,7 @@ const LoginForm = () => {
     try {
       await login(formData, rememberMe);
       toast.success('Connexion réussie!');
-      navigate('/dashboard'); // Redirect to dashboard after successful login
+      navigate('/home');
     } catch (error) {
       // Error is handled by the store
       toast.error(error.message);
