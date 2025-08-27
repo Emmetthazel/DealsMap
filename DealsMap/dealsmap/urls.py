@@ -31,6 +31,9 @@ urlpatterns = [
     
     # deals app URLs
     path('api/', include('apps.deals.urls')),
+    
+    # reviews app URLs
+    path('api/', include('apps.reviews.urls')),
 ]
 
 # Serve media files during development

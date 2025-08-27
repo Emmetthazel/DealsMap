@@ -16,31 +16,31 @@
 
 #### **Abdelkhalek** – Map
 
-- [ ] Installer et configurer OpenLayers avec React.
-- [ ] Créer `MapContainer` avec tuiles OpenStreetMap.
-- [ ] Implémenter géolocalisation utilisateur.
-- [ ] Ajouter marqueurs dynamiques par catégorie.
-- [ ] Popups informatifs au clic sur marqueur.
-- [ ] Contrôles : zoom, centrage, plein écran.
-- [ ] Clustering intelligent des marqueurs proches.
+- [X] Installer et configurer OpenLayers avec React.
+- [X] Créer `MapContainer` avec tuiles OpenStreetMap.
+- [X] Implémenter géolocalisation utilisateur.
+- [X] Ajouter marqueurs dynamiques par catégorie.
+- [X] Popups informatifs au clic sur marqueur.
+- [X] Contrôles : zoom, centrage, plein écran.
+- [X] Clustering intelligent des marqueurs proches.
 
 **Validation :**
 
-- [ ] Carte responsive et fluide.
-- [ ] Marqueurs cliquables avec popups corrects.
-- [ ] Clustering fonctionnel.
+- [X] Carte responsive et fluide.
+- [X] Marqueurs cliquables avec popups corrects.
+- [X] Clustering fonctionnel.
 
 #### Zineb – Reviews (préparation backend)
 
-- [ ] Créer modèle `Review` :
+- [X] Créer modèle `Review` :
   - `user`, `business`, `deal`, `rating` (1-5 étoiles, demi-étoiles), `comment`.
-- [ ] Ajouter contraintes : un avis par utilisateur et business/deal.
-- [ ] Implémenter modération automatique (spam/contenu inapproprié).
+- [X] Ajouter contraintes : un avis par utilisateur et business/deal.
+- [X] Implémenter modération automatique (spam/contenu inapproprié).
 
 **Validation :**
 
-- [ ] Reviews enregistrées avec contraintes respectées.
-- [ ] Contenu inapproprié détecté.
+- [X] Reviews enregistrées avec contraintes respectées.
+- [X] Contenu inapproprié détecté.
 
 ---
 
@@ -48,31 +48,31 @@
 
 #### **Abdelkhalek** – Map & Filtrage
 
-- [ ] Composant `FilterPanel` avec état local.
-- [ ] Filtres géographiques : slider distance, ville, quartier.
-- [ ] Multi-sélection catégories avec recherche.
-- [ ] Range slider pour pourcentage de réduction.
-- [ ] Filtres temporels : expire dans X jours.
-- [ ] Sauvegarde filtres dans localStorage/backend.
-- [ ] URL state pour partage de recherches.
+- [X] Composant `FilterPanel` avec état local.
+- [X] Filtres géographiques : slider distance, ville, quartier.
+- [X] Multi-sélection catégories avec recherche.
+- [X] Range slider pour pourcentage de réduction.
+- [X] Filtres temporels : expire dans X jours.
+- [X] Sauvegarde filtres dans localStorage/backend.
+- [X] URL state pour partage de recherches.
 
 **Validation :**
 
-- [ ] Filtres combinables et résultats temps réel.
-- [ ] Sauvegarde fonctionnelle (localStorage ou backend).
-- [ ] Partage de recherche via URL fonctionne.
+- [X] Filtres combinables et résultats temps réel.
+- [X] Sauvegarde fonctionnelle (localStorage ou backend).
+- [X] Partage de recherche via URL fonctionne.
 
 #### Zineb – Reviews (frontend)
 
-- [ ] Frontend : composants `RatingStars` et `ReviewForm`.
-- [ ] Affichage des avis pour business et deals.
-- [ ] Notifications aux propriétaires pour nouveaux avis.
+- [X] Frontend : composants `RatingStars` et `ReviewForm`.
+- [X] Affichage des avis pour business et deals.
+- [X] Notifications aux propriétaires pour nouveaux avis.
 
 **Validation :**
 
-- [ ] Avis soumis correctement.
-- [ ] Affichage dynamique des notes et commentaires.
-- [ ] Notifications déclenchées correctement.
+- [X] Avis soumis correctement.
+- [X] Affichage dynamique des notes et commentaires.
+- [X] Notifications déclenchées correctement.
 
 ---
 

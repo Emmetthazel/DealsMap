@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import BusinessForm from './components/BusinessForm';
 import DealsList from './pages/DealsList';
+import MapPage from './pages/MapPage';
 import Layout from './components/Layout';
 import { PrivateRoute, OwnerRoute } from './components/PrivateRoute';
 import useAuthStore from './store/AuthStore';
@@ -194,18 +195,7 @@ const App = () => {
           path="/map" 
           element={
             <Layout>
-              <div className="min-h-screen bg-gray-50 p-6">
-                <div className="max-w-7xl mx-auto">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-6">
-                    <i className="fas fa-map mr-3"></i>
-                    Carte Interactive
-                  </h1>
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <p className="text-gray-600">Carte interactive des deals et établissements</p>
-                    <p className="text-gray-500 text-sm mt-2">Fonctionnalité en cours de développement...</p>
-                  </div>
-                </div>
-              </div>
+              <MapPage />
             </Layout>
           } 
         />
