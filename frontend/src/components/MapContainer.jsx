@@ -15,17 +15,22 @@ import Select from 'ol/interaction/Select';
 import { defaults as defaultControls, FullScreen, Zoom, ZoomSlider } from 'ol/control';
 import { toast } from 'react-hot-toast';
 import { MapPin, Navigation, Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
+import { reverseGeocode } from '../services/GeoService';
 
 const MapContainer = ({ 
   businesses = [], 
   deals = [], 
   onMarkerClick, 
-  center = [2.3522, 48.8566], // Paris default
-  zoom = 12 
+  center = [-6.8498, 34.0209], // Rabat, Morocco default
+  zoom = 12,
+  onZoomChange,
+  selectedLocation,
+  highlightedDeal = null
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [locationAccuracy, setLocationAccuracy] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(zoom);
 
@@ -62,8 +67,35 @@ const MapContainer = ({
       }
     });
 
+    // Add selected location marker if available
+    if (selectedLocation && selectedLocation.coordinates) {
+      const selectedFeature = new Feature({
+        geometry: new Point(fromLonLat(selectedLocation.coordinates)),
+        type: 'selected',
+        name: selectedLocation.name,
+        locationType: selectedLocation.type
+      });
+      features.push(selectedFeature);
+    }
+
+    // Add highlighted deal marker if available
+    if (highlightedDeal) {
+      const latitude = highlightedDeal.business?.latitude || highlightedDeal.business_location?.latitude || highlightedDeal.latitude;
+      const longitude = highlightedDeal.business?.longitude || highlightedDeal.business_location?.longitude || highlightedDeal.longitude;
+      
+      if (latitude && longitude) {
+        const highlightedFeature = new Feature({
+          geometry: new Point(fromLonLat([longitude, latitude])),
+          type: 'highlighted',
+          name: highlightedDeal.title,
+          data: highlightedDeal
+        });
+        features.push(highlightedFeature);
+      }
+    }
+
     return features;
-  }, [businesses, deals]);
+  }, [businesses, deals, selectedLocation, highlightedDeal]);
 
   // Create marker styles
   const createMarkerStyle = useCallback((feature) => {
@@ -74,8 +106,23 @@ const MapContainer = ({
     let color = '#3B82F6'; // Default blue
     let icon = '🏪'; // Default business icon
     
+    // Special styling for highlighted deal
+    if (type === 'highlighted') {
+      color = '#10B981'; // Bright green
+      icon = '⭐';
+    }
+    // Special styling for selected location
+    else if (type === 'selected') {
+      color = '#F59E0B'; // Bright orange
+      icon = '🎯';
+    }
+    // Special styling for user location
+    else if (type === 'user') {
+      color = '#DC2626'; // Red
+      icon = '📍';
+    }
     // Color coding by category
-    if (category === 'Restaurant') {
+    else if (category === 'Restaurant') {
       color = '#EF4444'; // Red
       icon = '🍽️';
     } else if (category === 'Shopping') {
@@ -101,15 +148,15 @@ const MapContainer = ({
           <circle cx="16" cy="16" r="14" fill="${color}" stroke="white" stroke-width="2"/>
           <text x="16" y="22" text-anchor="middle" fill="white" font-size="16" font-weight="bold">${icon}</text>
         </svg>`,
-        scale: 1,
+        scale: type === 'selected' ? 1.2 : 1, // Make selected location marker slightly larger
         anchor: [0.5, 1]
       }),
       text: new Text({
         text: feature.get('name'),
-        font: '12px Arial',
-        fill: new Fill({ color: '#1F2937' }),
+        font: type === 'selected' ? '14px Arial' : '12px Arial', // Larger text for selected location
+        fill: new Fill({ color: type === 'selected' ? '#F59E0B' : '#1F2937' }), // Orange text for selected location
         stroke: new Stroke({ color: 'white', width: 2 }),
-        offsetY: -40
+        offsetY: type === 'selected' ? -50 : -40 // Adjust offset for larger marker
       })
     });
   }, []);
@@ -159,7 +206,9 @@ const MapContainer = ({
       target: mapRef.current,
       layers: [
         new TileLayer({
-          source: new OSM()
+          source: new OSM({
+            attributions: [] // Remove OpenStreetMap attribution
+          })
         }),
         vectorLayer
       ],
@@ -171,7 +220,8 @@ const MapContainer = ({
       }),
       controls: defaultControls({
         zoom: false,
-        rotate: false
+        rotate: false,
+        attribution: false // Disable attribution control
       }).extend([
         new Zoom({
           className: 'custom-zoom-control'
@@ -210,28 +260,84 @@ const MapContainer = ({
     // Store map instance
     mapInstanceRef.current = map;
 
-    // Update zoom state
-    map.getView().on('change:resolution', () => {
-      setCurrentZoom(map.getView().getZoom());
-    });
+  // Listen for fullscreen changes
+  const handleFullscreenChange = () => {
+    setIsFullscreen(!!document.fullscreenElement);
+  };
+  
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('msfullscreenchange', handleFullscreenChange);
 
-    // Cleanup
-    return () => {
-      if (map) {
-        map.setTarget(undefined);
-      }
-    };
+      // Cleanup
+  return () => {
+    if (map) {
+      map.setTarget(undefined);
+    }
+    // Remove fullscreen event listeners
+    document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+  };
   }, [center, zoom, createMarkerFeatures, createMarkerStyle, onMarkerClick]);
 
   // Update markers when data changes
   useEffect(() => {
     if (mapInstanceRef.current) {
       const features = createMarkerFeatures();
+      
+      // Add user location marker if available
+      if (userLocation) {
+        const userFeature = new Feature({
+          geometry: new Point(fromLonLat(userLocation)),
+          type: 'user',
+          name: 'Your Location'
+        });
+        features.push(userFeature);
+      }
+      
       const vectorSource = mapInstanceRef.current.getLayers().getArray()[1].getSource().getSource();
       vectorSource.clear();
       vectorSource.addFeatures(features);
     }
-  }, [businesses, deals, createMarkerFeatures]);
+  }, [businesses, deals, createMarkerFeatures, userLocation]);
+
+  // Update zoom when prop changes
+  useEffect(() => {
+    if (mapInstanceRef.current && mapInstanceRef.current.getView) {
+      const view = mapInstanceRef.current.getView();
+      const currentZoom = view.getZoom();
+      
+      if (currentZoom !== zoom) {
+        view.animate({
+          zoom: zoom,
+          duration: 800,
+          easing: 'easeOut'
+        });
+      }
+    }
+  }, [zoom]);
+
+  // Update zoom state and notify parent
+  useEffect(() => {
+    if (mapInstanceRef.current && mapInstanceRef.current.getView) {
+      const view = mapInstanceRef.current.getView();
+      
+      const handleZoomChange = () => {
+        const newZoom = view.getZoom();
+        setCurrentZoom(newZoom);
+        if (onZoomChange) {
+          onZoomChange(newZoom);
+        }
+      };
+      
+      view.on('change:resolution', handleZoomChange);
+      
+      return () => {
+        view.un('change:resolution', handleZoomChange);
+      };
+    }
+  }, [onZoomChange]);
 
   // Get user location
   const getUserLocation = useCallback(() => {
@@ -240,28 +346,69 @@ const MapContainer = ({
       return;
     }
 
-    toast.loading('Getting your location...');
+    toast.loading('Getting your precise location...');
+    
+    const options = {
+      enableHighAccuracy: true,  // Use GPS if available
+      timeout: 30000,           // Wait up to 30 seconds for better accuracy
+      maximumAge: 0,            // Don't use cached location
+      forceRequest: true        // Force a new location request
+    };
     
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
+      async (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
         setUserLocation([longitude, latitude]);
+        setLocationAccuracy(accuracy);
         
         if (mapInstanceRef.current) {
           const view = mapInstanceRef.current.getView();
           view.animate({
             center: fromLonLat([longitude, latitude]),
-            zoom: 15,
+            zoom: 16, // Zoom in more for better precision
             duration: 1000
           });
         }
         
-        toast.success('Location updated!');
+        // Get actual city name from coordinates
+        try {
+          const cityInfo = await reverseGeocode(latitude, longitude);
+          if (cityInfo) {
+            console.log('Actual city:', cityInfo.city);
+            if (cityInfo.city !== 'Unknown') {
+              toast.success(`Location found in ${cityInfo.city}! Accuracy: ${Math.round(accuracy)}m`);
+            } else {
+              toast.success(`Location found! Accuracy: ${Math.round(accuracy)}m`);
+            }
+          } else {
+            toast.success(`Location found! Accuracy: ${Math.round(accuracy)}m`);
+          }
+        } catch (error) {
+          console.error('Reverse geocoding error:', error);
+          toast.success(`Location found! Accuracy: ${Math.round(accuracy)}m`);
+        }
+        
+        console.log('Location:', { latitude, longitude, accuracy });
       },
       (error) => {
         console.error('Error getting location:', error);
-        toast.error('Could not get your location');
-      }
+        let errorMessage = 'Could not get your location';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied. Please allow location access in your browser settings.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable. Please check your GPS settings.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out. Please try again.';
+            break;
+        }
+        
+        toast.error(errorMessage);
+      },
+      options
     );
   }, []);
 
@@ -281,16 +428,32 @@ const MapContainer = ({
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
-    if (mapInstanceRef.current) {
-      const fullscreenControl = mapInstanceRef.current.getControls().getArray()
-        .find(control => control instanceof FullScreen);
-      
-      if (fullscreenControl) {
-        fullscreenControl.handleClick_();
-        setIsFullscreen(!isFullscreen);
+    if (!document.fullscreenElement) {
+      // Enter fullscreen
+      if (mapRef.current?.requestFullscreen) {
+        mapRef.current.requestFullscreen();
+        setIsFullscreen(true);
+      } else if (mapRef.current?.webkitRequestFullscreen) {
+        mapRef.current.webkitRequestFullscreen();
+        setIsFullscreen(true);
+      } else if (mapRef.current?.msRequestFullscreen) {
+        mapRef.current.msRequestFullscreen();
+        setIsFullscreen(true);
+      }
+    } else {
+      // Exit fullscreen
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        setIsFullscreen(false);
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+        setIsFullscreen(false);
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+        setIsFullscreen(false);
       }
     }
-  }, [isFullscreen]);
+  }, []);
 
   // Zoom controls
   const zoomIn = useCallback(() => {
@@ -315,11 +478,46 @@ const MapContainer = ({
 
   return (
     <div className="relative w-full h-full">
-      {/* Map container */}
+            {/* Map container */}
       <div 
         ref={mapRef} 
         className="w-full h-full rounded-lg shadow-lg"
       />
+      
+      {/* Floating Location Pin (Google Maps style) */}
+      {selectedLocation && (
+        <div className="absolute pointer-events-none" style={{
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -100%)',
+          zIndex: 1000
+        }}>
+          {/* Pin shadow */}
+          <div className="w-6 h-3 bg-black opacity-20 rounded-full transform translate-y-2"></div>
+          
+          {/* Main pin */}
+          <div className="relative">
+            {/* Pin body */}
+            <div className="w-8 h-12 bg-red-500 rounded-t-full shadow-lg border-2 border-white">
+              {/* Pin highlight */}
+              <div className="w-4 h-6 bg-red-400 rounded-t-full mx-auto mt-1"></div>
+            </div>
+            
+            {/* Pin point */}
+            <div className="w-0 h-0 border-l-4 border-r-4 border-t-8 border-l-transparent border-r-transparent border-t-red-500 mx-auto"></div>
+            
+            {/* Location label */}
+            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-white text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg border border-gray-200 whitespace-nowrap">
+              <div className="font-medium text-center">🎯 {selectedLocation.name}</div>
+              <div className="text-gray-500 text-center text-xs">
+                {selectedLocation.type === 'city' ? 'City Center' : 'Neighborhood Center'}
+              </div>
+              {/* Arrow pointing down */}
+              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white"></div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Custom controls overlay */}
       <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -336,7 +534,7 @@ const MapContainer = ({
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <button
             onClick={zoomIn}
-            className="block w-10 h-10 hover:bg-gray-50 transition-colors flex items-center justify-center"
+            className="w-10 h-10 hover:bg-gray-50 transition-colors flex items-center justify-center"
             title="Zoom in"
           >
             <ZoomIn className="w-4 h-4 text-gray-700" />
@@ -346,7 +544,7 @@ const MapContainer = ({
           </div>
           <button
             onClick={zoomOut}
-            className="block w-10 h-10 hover:bg-gray-50 transition-colors flex items-center justify-center"
+            className="w-10 h-10 hover:bg-gray-50 transition-colors flex items-center justify-center"
             title="Zoom out"
           >
             <ZoomOut className="w-4 h-4 text-gray-700" />
@@ -370,11 +568,41 @@ const MapContainer = ({
             <MapPin className="w-4 h-4 text-blue-600" />
             <span className="font-medium">Map Info</span>
           </div>
-          <div className="text-xs">
-            <div>Businesses: {businesses.length}</div>
-            <div>Deals: {deals.length}</div>
-            <div>Zoom: {Math.round(currentZoom)}</div>
-          </div>
+                      <div className="text-xs">
+              <div>Businesses: {businesses.length}</div>
+              <div>Deals: {deals.length}</div>
+              <div className="flex items-center gap-1">
+                <span>Zoom:</span>
+                <span className="font-medium text-blue-600">{Math.round(currentZoom)}</span>
+                {currentZoom >= 16 && <span className="text-green-600">(Street)</span>}
+                {currentZoom >= 13 && currentZoom < 16 && <span className="text-blue-600">(City)</span>}
+                {currentZoom < 13 && <span className="text-gray-600">(Region)</span>}
+              </div>
+              
+              {/* Selected Location Indicator */}
+              {selectedLocation && (
+                <div className="mt-2 pt-2 border-t border-orange-200 bg-orange-50 p-2 rounded">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                    <div className="text-orange-700 font-medium">
+                      🎯 {selectedLocation.name}
+                    </div>
+                  </div>
+                  <div className="text-orange-600 text-xs mt-1">
+                    {selectedLocation.type === 'city' ? 'City Center' : 'Neighborhood Center'}
+                  </div>
+                </div>
+              )}
+              
+              {userLocation && (
+                <div className="mt-1 pt-1 border-t border-gray-200">
+                  <div className="text-blue-600">📍 Your Location</div>
+                  {locationAccuracy && (
+                    <div className="text-gray-500">Accuracy: {Math.round(locationAccuracy)}m</div>
+                  )}
+                </div>
+              )}
+            </div>
         </div>
       </div>
     </div>

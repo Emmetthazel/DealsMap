@@ -21,10 +21,17 @@ API.interceptors.request.use((config) => {
 
 export const fetchCategories = async (queryParams = '') => {
   try {
+    console.log('🌐 CategoryService: Making API call to categories...');
     const res = await API.get(`categories/${queryParams}`);
+    console.log('✅ CategoryService: API response:', res);
     return res.data;
   } catch (error) {
-    console.error('Category service error:', error);
+    console.error('❌ CategoryService: API error:', error);
+    console.error('❌ CategoryService: Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
     throw error;
   }
 };

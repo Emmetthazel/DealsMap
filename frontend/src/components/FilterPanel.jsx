@@ -4,13 +4,13 @@ import {
   MapPin, 
   Calendar, 
   Percent, 
-  Search, 
   X, 
   Save, 
   RotateCcw,
   Share2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { geocodeCity, searchNeighborhoods } from '../services/GeoService';
 
 const FilterPanel = ({ 
   categories = [], 
@@ -29,7 +29,6 @@ const FilterPanel = ({
     
     // Category filters
     selectedCategories: [],
-    categorySearch: '',
     
     // Deal filters
     minDiscount: 0,
@@ -50,6 +49,10 @@ const FilterPanel = ({
 
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [filterName, setFilterName] = useState('');
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [neighborhoodSuggestions, setNeighborhoodSuggestions] = useState([]);
+  const [isSearchingCity, setIsSearchingCity] = useState(false);
+  const [isSearchingNeighborhood, setIsSearchingNeighborhood] = useState(false);
 
   // Update filters and notify parent
   const updateFilters = useCallback((newFilters) => {
@@ -60,7 +63,12 @@ const FilterPanel = ({
 
   // Handle individual filter changes
   const handleFilterChange = useCallback((key, value) => {
-    updateFilters({ [key]: value });
+    if (key === 'city' && !value) {
+      // Clear city coordinates when city is cleared
+      updateFilters({ [key]: value, cityCoordinates: null });
+    } else {
+      updateFilters({ [key]: value });
+    }
   }, [updateFilters]);
 
   // Reset all filters
@@ -70,7 +78,6 @@ const FilterPanel = ({
       city: '',
       neighborhood: '',
       selectedCategories: [],
-      categorySearch: '',
       minDiscount: 0,
       maxDiscount: 100,
       hasDeals: false,
@@ -85,6 +92,92 @@ const FilterPanel = ({
     onFiltersChange(defaultFilters);
     toast.success('Filters reset to default');
   }, [onFiltersChange]);
+
+  // Debounced search for cities
+  const searchCities = useCallback(async (query) => {
+    if (query.length < 2) {
+      setCitySuggestions([]);
+      return;
+    }
+
+    // Clear previous timeout
+    if (window.citySearchTimeout) {
+      clearTimeout(window.citySearchTimeout);
+    }
+
+    // Set new timeout for debounced search
+    window.citySearchTimeout = setTimeout(async () => {
+      setIsSearchingCity(true);
+      try {
+        const results = await geocodeCity(query);
+        setCitySuggestions(results);
+      } catch (error) {
+        console.error('City search error:', error);
+        toast.error('Failed to search cities');
+      } finally {
+        setIsSearchingCity(false);
+      }
+    }, 300); // 300ms delay
+  }, []);
+
+  // Handle city selection
+  const handleCitySelect = useCallback((city) => {
+    setFilters(prev => ({
+      ...prev,
+      city: city.name,
+      cityCoordinates: [city.longitude, city.latitude]
+    }));
+    setCitySuggestions([]);
+    onFiltersChange({
+      ...filters,
+      city: city.name,
+      cityCoordinates: [city.longitude, city.latitude]
+    });
+    toast.success(`Selected: ${city.name}`);
+  }, [filters, onFiltersChange]);
+
+  // Debounced search for neighborhoods
+  const searchNeighborhoodsHandler = useCallback(async (query) => {
+    if (query.length < 2) {
+      setNeighborhoodSuggestions([]);
+      return;
+    }
+
+    // Clear previous timeout
+    if (window.neighborhoodSearchTimeout) {
+      clearTimeout(window.neighborhoodSearchTimeout);
+    }
+
+    // Set new timeout for debounced search
+    window.neighborhoodSearchTimeout = setTimeout(async () => {
+      setIsSearchingNeighborhood(true);
+      try {
+        const results = await searchNeighborhoods(query, filters.city);
+        setNeighborhoodSuggestions(results);
+      } catch (error) {
+        console.error('Neighborhood search error:', error);
+        toast.error('Failed to search neighborhoods');
+      } finally {
+        setIsSearchingNeighborhood(false);
+      }
+    }, 300); // 300ms delay
+  }, [filters.city]);
+
+  // Handle neighborhood selection
+  const handleNeighborhoodSelect = useCallback((neighborhood) => {
+    setFilters(prev => ({
+      ...prev,
+      neighborhood: neighborhood.name,
+      neighborhoodCoordinates: [neighborhood.longitude, neighborhood.latitude]
+    }));
+    setNeighborhoodSuggestions([]);
+    onFiltersChange({
+      ...filters,
+      neighborhood: neighborhood.name,
+      neighborhoodCoordinates: [neighborhood.longitude, neighborhood.latitude]
+    });
+    toast.success(`Selected: ${neighborhood.name}`);
+  }, [filters, onFiltersChange]);
 
   // Save current filters
   const saveCurrentFilters = useCallback(() => {
@@ -115,6 +208,7 @@ const FilterPanel = ({
   // Delete saved filters
   const deleteSavedFilters = useCallback((filterId) => {
     // This would typically call a function to remove from storage
+    // For now, just show a success message
     toast.success('Filters deleted');
   }, []);
 
@@ -160,10 +254,7 @@ const FilterPanel = ({
     }
   }, []);
 
-  // Filter categories based on search
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(filters.categorySearch.toLowerCase())
-  );
+
 
   return (
     <div className="relative">
@@ -182,6 +273,11 @@ const FilterPanel = ({
           Array.isArray(value) ? value.length > 0 : Boolean(value)
         ) && (
           <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+        )}
+        {filters.selectedCategories.length > 0 && (
+          <span className="ml-1 bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full">
+            {filters.selectedCategories.length}
+          </span>
         )}
       </button>
 
@@ -220,26 +316,104 @@ const FilterPanel = ({
                   <div className="text-xs text-gray-500 mt-1">{filters.distance} km</div>
                 </div>
                 
-                <div>
+                <div className="relative">
                   <label className="block text-xs text-gray-600 mb-1">City</label>
-                  <input
-                    type="text"
-                    placeholder="Enter city name"
-                    value={filters.city}
-                    onChange={(e) => handleFilterChange('city', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search for a city..."
+                      value={filters.city}
+                      onChange={(e) => {
+                        handleFilterChange('city', e.target.value);
+                        searchCities(e.target.value);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {isSearchingCity && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      </div>
+                    )}
+                  </div>
+                  
+                                                       {/* City suggestions dropdown */}
+                  {citySuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {citySuggestions.map((city, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleCitySelect(city)}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none text-sm"
+                        >
+                          <div className="font-medium">{city.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {city.state && `${city.state}`}
+                            {city.country !== 'Unknown' && `${city.state ? ' • ' : ''}${city.country}`}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Go to City button */}
+                  {filters.cityCoordinates && (
+                    <button
+                      onClick={() => onFiltersChange(filters)}
+                      className="mt-2 w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      🗺️ Go to {filters.city}
+                    </button>
+                  )}
+                  
+                  {/* Go to Neighborhood button */}
+                  {filters.neighborhoodCoordinates && (
+                    <button
+                      onClick={() => onFiltersChange(filters)}
+                      className="mt-2 w-full px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      🏘️ Go to {filters.neighborhood}
+                    </button>
+                  )}
                 </div>
                 
-                <div>
+                <div className="relative">
                   <label className="block text-xs text-gray-600 mb-1">Neighborhood</label>
-                  <input
-                    type="text"
-                    placeholder="Enter neighborhood"
-                    value={filters.neighborhood}
-                    onChange={(e) => handleFilterChange('neighborhood', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search for a neighborhood..."
+                      value={filters.neighborhood}
+                      onChange={(e) => {
+                        handleFilterChange('neighborhood', e.target.value);
+                        searchNeighborhoodsHandler(e.target.value);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {isSearchingNeighborhood && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Neighborhood suggestions dropdown */}
+                  {neighborhoodSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {neighborhoodSuggestions.map((neighborhood, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleNeighborhoodSelect(neighborhood)}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none text-sm"
+                        >
+                          <div className="font-medium">{neighborhood.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {neighborhood.city !== 'Unknown' && `${neighborhood.city}`}
+                            {neighborhood.country !== 'Unknown' && ` • ${neighborhood.country}`}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -247,37 +421,85 @@ const FilterPanel = ({
             {/* Category Filters */}
             <div className="mb-6">
               <h4 className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
-                <Search className="w-4 h-4" />
+                <span className="w-4 h-4 text-blue-600">🏷️</span>
                 Categories
+                {filters.selectedCategories.length > 0 && (
+                  <span className="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                    {filters.selectedCategories.length} selected
+                  </span>
+                )}
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('categories');
+                    window.location.reload();
+                  }}
+                  className="ml-auto text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded"
+                  title="Refresh categories from API"
+                >
+                  🔄 Refresh
+                </button>
               </h4>
               
               <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="Search categories..."
-                  value={filters.categorySearch}
-                  onChange={(e) => handleFilterChange('categorySearch', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                
-                <div className="max-h-32 overflow-y-auto space-y-2">
-                  {filteredCategories.map(category => (
-                    <label key={category.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={filters.selectedCategories.includes(category.id)}
-                        onChange={(e) => {
-                          const newCategories = e.target.checked
-                            ? [...filters.selectedCategories, category.id]
-                            : filters.selectedCategories.filter(id => id !== category.id);
-                          handleFilterChange('selectedCategories', newCategories);
-                        }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">{category.name}</span>
-                    </label>
-                  ))}
+                <div className="max-h-48 overflow-y-auto space-y-2 border border-gray-200 rounded-md p-3">
+                  {categories.length === 0 ? (
+                    <div className="space-y-3">
+                      <div className="text-center text-gray-500 py-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                        Loading categories...
+                      </div>
+                      {/* Fallback categories for testing */}
+                      <div className="text-xs text-gray-400 text-center border-t pt-2">
+                        Fallback categories (if API fails):
+                      </div>
+                      <div className="space-y-2">
+                        {['Restaurant', 'Shopping', 'Services'].map((name, index) => (
+                          <label key={index} className="flex items-center gap-2 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={filters.selectedCategories.includes(`fallback-${index}`)}
+                              onChange={(e) => {
+                                const newCategories = e.target.checked
+                                  ? [...filters.selectedCategories, `fallback-${index}`]
+                                  : filters.selectedCategories.filter(id => id !== `fallback-${index}`);
+                                handleFilterChange('selectedCategories', newCategories);
+                              }}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">{name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    categories.map(category => (
+                      <label key={category.id} className="flex items-center gap-2 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.selectedCategories.includes(category.id)}
+                          onChange={(e) => {
+                            const newCategories = e.target.checked
+                              ? [...filters.selectedCategories, category.id]
+                              : filters.selectedCategories.filter(id => id !== category.id);
+                            handleFilterChange('selectedCategories', newCategories);
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{category.name}</span>
+                      </label>
+                    ))
+                  )}
                 </div>
+                
+                {/* Clear Categories Button */}
+                {filters.selectedCategories.length > 0 && (
+                  <button
+                    onClick={() => handleFilterChange('selectedCategories', [])}
+                    className="w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors border border-red-200"
+                  >
+                    ✕ Clear All Categories
+                  </button>
+                )}
               </div>
             </div>
 
@@ -312,15 +534,7 @@ const FilterPanel = ({
                   </div>
                 </div>
                 
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={filters.hasDeals}
-                    onChange={(e) => handleFilterChange('hasDeals', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">Only show businesses with deals</span>
-                </label>
+
               </div>
             </div>
 
@@ -393,9 +607,9 @@ const FilterPanel = ({
                     onChange={(e) => handleFilterChange('openNow', e.target.checked)}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700">Open now only</span>
-                </label>
-              </div>
+                                  <span className="text-sm text-gray-700">Open now only</span>
+              </label>
+            </div>
             )}
 
             {/* Filter Actions */}

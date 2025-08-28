@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import BusinessService from '../services/BusinessService.js';
-import GeoService from '../services/GeoService.js';
+import { getCurrentLocation, validateCoordinates } from '../services/GeoService.js';
 import { fetchCategories } from '../services/categoryService.js';
 
 const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
@@ -146,7 +146,7 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
     setError('');
     
     try {
-      const location = await GeoService.getCurrentLocation();
+      const location = await getCurrentLocation();
       setFormData(prev => ({
         ...prev,
         latitude: location.lat,
@@ -193,7 +193,7 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
       return false;
     }
     
-    if (!GeoService.validateCoordinates(lat, lng)) {
+    if (!validateCoordinates(lat, lng)) {
       setError('Invalid coordinates. Latitude must be between -90 and 90, longitude between -180 and 180.');
       return false;
     }

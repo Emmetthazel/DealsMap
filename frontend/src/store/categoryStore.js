@@ -8,17 +8,27 @@ export const useCategoryStore = create((set) => ({
   fetchAllCategories: async () => {
     set({ loading: true, error: null });
     try {
-      const cached = localStorage.getItem('categories');
-      if (cached) {
-        set({ categories: JSON.parse(cached), loading: false });
-        return;
-      }
-
+      console.log('🔄 Fetching categories...');
+      
+      // Force fresh fetch from API (ignore cache for now)
+      console.log('🌐 Fetching categories from API...');
       const data = await fetchCategories();
+      console.log('✅ Categories fetched from API:', data);
+      
+      // Update localStorage with fresh data
       localStorage.setItem('categories', JSON.stringify(data));
       set({ categories: data, loading: false });
     } catch (err) {
+      console.error('❌ Error fetching categories:', err);
       set({ error: err.message, loading: false });
     }
+  },
+  clearCacheAndRefresh: async () => {
+    console.log('🗑️ Clearing categories cache...');
+    localStorage.removeItem('categories');
+    set({ categories: [], loading: false, error: null });
+    // Fetch fresh data
+    const store = useCategoryStore.getState();
+    await store.fetchAllCategories();
   },
 }));
