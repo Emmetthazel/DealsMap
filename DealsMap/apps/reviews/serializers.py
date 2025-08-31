@@ -14,19 +14,17 @@ class ReviewSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(write_only=True)
     business_name = serializers.CharField(source='business.name', read_only=True)
     deal_title = serializers.CharField(source='deal.title', read_only=True)
-    average_rating = serializers.SerializerMethodField()
+    owner_response = serializers.CharField(read_only=True)
+    owner_response_at = serializers.DateTimeField(read_only=True)
     
     class Meta:
         model = Review
         fields = [
             'id', 'user', 'user_id', 'business', 'deal', 'rating', 'comment',
             'status', 'created_at', 'updated_at', 'business_name', 'deal_title',
-            'average_rating'
+            'owner_response', 'owner_response_at'
         ]
-        read_only_fields = ['status', 'created_at', 'updated_at', 'average_rating']
-    
-    def get_average_rating(self, obj):
-        return obj.get_average_rating()
+        read_only_fields = ['status', 'created_at', 'updated_at', 'owner_response', 'owner_response_at']
     
     def validate(self, data):
         # Ensure either business or deal is provided, but not both
@@ -55,12 +53,26 @@ class ReviewSerializer(serializers.ModelSerializer):
         validated_data['user_id'] = user_id
         return super().create(validated_data)
 
+from decimal import Decimal
+
 class ReviewCreateSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(write_only=True)
-    
     class Meta:
         model = Review
-        fields = ['user_id', 'business', 'deal', 'rating', 'comment']
+        fields = ['business', 'deal', 'rating', 'comment']
+    
+    def validate_rating(self, value):
+        # Convert any numeric value to Decimal
+        if isinstance(value, (int, float)):
+            value = Decimal(str(value))
+        
+        # Round to nearest 0.5 to match the choices
+        value = round(value * 2) / 2
+        
+        # Ensure rating is within valid range
+        if value < Decimal('0.5') or value > Decimal('5.0'):
+            raise serializers.ValidationError("Rating must be between 0.5 and 5.0")
+        
+        return value
     
     def validate(self, data):
         # Ensure either business or deal is provided, but not both
@@ -98,6 +110,20 @@ class ReviewModerationSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Moderator not found.")
         
         return instance
+
+class OwnerResponseSerializer(serializers.ModelSerializer):
+    """Serializer for business owner responses to reviews"""
+    
+    class Meta:
+        model = Review
+        fields = ['owner_response']
+    
+    def validate_owner_response(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Response text cannot be empty.")
+        if len(value) > 1000:
+            raise serializers.ValidationError("Response text cannot exceed 1000 characters.")
+        return value.strip()
 
 class ReviewStatsSerializer(serializers.Serializer):
     total_reviews = serializers.IntegerField()

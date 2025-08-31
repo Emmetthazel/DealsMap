@@ -33,6 +33,8 @@ const MapContainer = ({
   const [locationAccuracy, setLocationAccuracy] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(zoom);
+  const [isLocationActive, setIsLocationActive] = useState(false);
+  const locationWatcherRef = useRef(null);
 
   // Create marker features from businesses and deals
   const createMarkerFeatures = useCallback(() => {
@@ -94,8 +96,19 @@ const MapContainer = ({
       }
     }
 
+    // Add user location marker if available
+    if (userLocation) {
+      const userFeature = new Feature({
+        geometry: new Point(fromLonLat(userLocation)),
+        type: 'user',
+        name: 'Your Location',
+        data: { type: 'user_location' }
+      });
+      features.push(userFeature);
+    }
+
     return features;
-  }, [businesses, deals, selectedLocation, highlightedDeal]);
+  }, [businesses, deals, selectedLocation, highlightedDeal, userLocation]);
 
   // Create marker styles
   const createMarkerStyle = useCallback((feature) => {
@@ -160,6 +173,20 @@ const MapContainer = ({
       })
     });
   }, []);
+
+  // Refresh map when user location changes
+  useEffect(() => {
+    if (mapInstanceRef.current && userLocation) {
+      const features = createMarkerFeatures();
+      const vectorSource = mapInstanceRef.current.getLayers().getArray()
+        .find(layer => layer instanceof VectorLayer)?.getSource();
+      
+      if (vectorSource) {
+        vectorSource.clear();
+        features.forEach(feature => vectorSource.addFeature(feature));
+      }
+    }
+  }, [userLocation, createMarkerFeatures]);
 
   // Initialize map
   useEffect(() => {
@@ -339,7 +366,7 @@ const MapContainer = ({
     }
   }, [onZoomChange]);
 
-  // Get user location
+  // Get user location with improved accuracy
   const getUserLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by this browser');
@@ -348,16 +375,39 @@ const MapContainer = ({
 
     toast.loading('Getting your precise location...');
     
-    const options = {
-      enableHighAccuracy: true,  // Use GPS if available
-      timeout: 30000,           // Wait up to 30 seconds for better accuracy
-      maximumAge: 0,            // Don't use cached location
-      forceRequest: true        // Force a new location request
+    let bestAccuracy = Infinity;
+    let bestPosition = null;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    // High accuracy options for GPS
+    const highAccuracyOptions = {
+      enableHighAccuracy: true,
+      timeout: 45000,           // 45 seconds for GPS
+      maximumAge: 0,            // No cached location
+      forceRequest: true
     };
     
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
+    // Standard accuracy options as fallback
+    const standardOptions = {
+      enableHighAccuracy: false,
+      timeout: 20000,           // 20 seconds for network
+      maximumAge: 60000,        // Allow 1 minute old cache
+      forceRequest: false
+    };
+    
+    const processPosition = async (position) => {
+      const { latitude, longitude, accuracy } = position.coords;
+      attempts++;
+      
+      console.log(`Location attempt ${attempts}:`, { latitude, longitude, accuracy, bestAccuracy });
+      
+      // Update if this is the best accuracy so far
+      if (accuracy < bestAccuracy) {
+        bestAccuracy = accuracy;
+        bestPosition = position;
+        
+        // Update map immediately with better position
         setUserLocation([longitude, latitude]);
         setLocationAccuracy(accuracy);
         
@@ -365,41 +415,70 @@ const MapContainer = ({
           const view = mapInstanceRef.current.getView();
           view.animate({
             center: fromLonLat([longitude, latitude]),
-            zoom: 16, // Zoom in more for better precision
+            zoom: accuracy < 10 ? 18 : accuracy < 50 ? 17 : 16, // Zoom based on accuracy
             duration: 1000
           });
         }
         
-        // Get actual city name from coordinates
-        try {
-          const cityInfo = await reverseGeocode(latitude, longitude);
-          if (cityInfo) {
-            console.log('Actual city:', cityInfo.city);
-            if (cityInfo.city !== 'Unknown') {
-              toast.success(`Location found in ${cityInfo.city}! Accuracy: ${Math.round(accuracy)}m`);
-            } else {
-              toast.success(`Location found! Accuracy: ${Math.round(accuracy)}m`);
-            }
-          } else {
-            toast.success(`Location found! Accuracy: ${Math.round(accuracy)}m`);
-          }
-        } catch (error) {
-          console.error('Reverse geocoding error:', error);
-          toast.success(`Location found! Accuracy: ${Math.round(accuracy)}m`);
+        // Show progress toast
+        if (accuracy < 10) {
+          toast.success(`Excellent accuracy! ${Math.round(accuracy)}m`);
+        } else if (accuracy < 25) {
+          toast.success(`Good accuracy! ${Math.round(accuracy)}m`);
+        } else if (accuracy < 100) {
+          toast.success(`Fair accuracy: ${Math.round(accuracy)}m`);
+        } else {
+          toast.success(`Location found: ${Math.round(accuracy)}m`);
         }
-        
-        console.log('Location:', { latitude, longitude, accuracy });
-      },
-      (error) => {
-        console.error('Error getting location:', error);
-        let errorMessage = 'Could not get your location';
+      }
+      
+      // If we have good accuracy or max attempts, stop
+      if (bestAccuracy < 20 || attempts >= maxAttempts) {
+        if (bestPosition) {
+          const { latitude, longitude } = bestPosition.coords;
+          
+          // Get city name from best position
+          try {
+            const cityInfo = await reverseGeocode(latitude, longitude);
+            if (cityInfo && cityInfo.city !== 'Unknown') {
+              console.log('Final city:', cityInfo.city);
+              toast.success(`📍 Location in ${cityInfo.city} (${Math.round(bestAccuracy)}m accuracy)`);
+            } else {
+              toast.success(`📍 Location found (${Math.round(bestAccuracy)}m accuracy)`);
+            }
+          } catch (error) {
+            console.error('Reverse geocoding error:', error);
+            toast.success(`📍 Location found (${Math.round(bestAccuracy)}m accuracy)`);
+          }
+        }
+        return;
+      }
+      
+      // Try again with standard accuracy if needed
+      if (attempts < maxAttempts && bestAccuracy > 50) {
+        setTimeout(() => {
+          navigator.geolocation.getCurrentPosition(
+            processPosition,
+            handleLocationError,
+            standardOptions
+          );
+        }, 2000); // Wait 2 seconds before next attempt
+      }
+    };
+    
+    const handleLocationError = (error) => {
+      console.error('Location error:', error);
+      attempts++;
+      
+      if (attempts >= maxAttempts) {
+        let errorMessage = 'Could not get precise location';
         
         switch (error.code) {
           case error.PERMISSION_DENIED:
             errorMessage = 'Location permission denied. Please allow location access in your browser settings.';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information unavailable. Please check your GPS settings.';
+            errorMessage = 'Location unavailable. Please check GPS and try again.';
             break;
           case error.TIMEOUT:
             errorMessage = 'Location request timed out. Please try again.';
@@ -407,10 +486,85 @@ const MapContainer = ({
         }
         
         toast.error(errorMessage);
-      },
-      options
+        return;
+      }
+      
+      // Try standard accuracy as fallback
+      if (attempts < maxAttempts) {
+        setTimeout(() => {
+          navigator.geolocation.getCurrentPosition(
+            processPosition,
+            handleLocationError,
+            standardOptions
+          );
+        }, 1000);
+      }
+    };
+    
+    // Start with high accuracy GPS
+    navigator.geolocation.getCurrentPosition(
+      processPosition,
+      handleLocationError,
+      highAccuracyOptions
     );
+    
+    // Start continuous monitoring for better accuracy
+    startLocationMonitoring();
   }, []);
+  
+  // Start continuous location monitoring
+  const startLocationMonitoring = useCallback(() => {
+    if (!navigator.geolocation || locationWatcherRef.current) return;
+    
+    const watchOptions = {
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 10000 // Allow 10 second old positions
+    };
+    
+    locationWatcherRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        
+        // Only update if we get better accuracy
+        if (!locationAccuracy || accuracy < locationAccuracy) {
+          setUserLocation([longitude, latitude]);
+          setLocationAccuracy(accuracy);
+          console.log('Location improved:', { accuracy, previous: locationAccuracy });
+          
+          // Show improvement toast
+          if (accuracy < 10) {
+            toast.success(`🎯 GPS accuracy improved to ${Math.round(accuracy)}m!`);
+          } else if (accuracy < 25 && accuracy < (locationAccuracy || Infinity)) {
+            toast.success(`🎯 Location accuracy improved to ${Math.round(accuracy)}m!`);
+          }
+        }
+      },
+      (error) => {
+        console.log('Watch position error:', error);
+        // Don't show error for watch position, just log it
+      },
+      watchOptions
+    );
+    
+    setIsLocationActive(true);
+  }, [locationAccuracy]);
+  
+  // Stop location monitoring
+  const stopLocationMonitoring = useCallback(() => {
+    if (locationWatcherRef.current) {
+      navigator.geolocation.clearWatch(locationWatcherRef.current);
+      locationWatcherRef.current = null;
+      setIsLocationActive(false);
+    }
+  }, []);
+  
+  // Cleanup location monitoring on unmount
+  useEffect(() => {
+    return () => {
+      stopLocationMonitoring();
+    };
+  }, [stopLocationMonitoring]);
 
   // Center map on user location
   const centerOnUser = useCallback(() => {
@@ -485,7 +639,7 @@ const MapContainer = ({
       />
       
       {/* Floating Location Pin (Google Maps style) */}
-      {selectedLocation && (
+      {selectedLocation && !userLocation && (
         <div className="absolute pointer-events-none" style={{
           left: '50%',
           top: '50%',
@@ -518,16 +672,55 @@ const MapContainer = ({
           </div>
         </div>
       )}
+
+      {/* Floating User Location Pin */}
+      {userLocation && (
+        <div className="absolute pointer-events-none" style={{
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -100%)',
+          zIndex: 1000
+        }}>
+          {/* Pin shadow */}
+          <div className="w-6 h-3 bg-black opacity-20 rounded-full transform translate-y-2"></div>
+          
+          {/* Main pin */}
+          <div className="relative">
+            {/* Pin body */}
+            <div className="w-8 h-12 bg-blue-500 rounded-t-full shadow-lg border-2 border-white">
+              {/* Pin highlight */}
+              <div className="w-4 h-6 bg-blue-400 rounded-t-full mx-auto mt-1"></div>
+            </div>
+            
+            {/* Pin point */}
+            <div className="w-0 h-0 border-l-4 border-r-4 border-t-8 border-l-transparent border-r-transparent border-t-blue-500 mx-auto"></div>
+            
+            {/* Location label */}
+            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-white text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg border border-gray-200 whitespace-nowrap">
+              <div className="font-medium text-center">📍 Your Location</div>
+              <div className="text-gray-500 text-center text-xs">
+                {locationAccuracy ? `Accuracy: ${Math.round(locationAccuracy)}m` : 'GPS Location'}
+              </div>
+              {/* Arrow pointing down */}
+              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white"></div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Custom controls overlay */}
       <div className="absolute top-4 left-4 flex flex-col gap-2">
         {/* Location button */}
         <button
           onClick={centerOnUser}
-          className="bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 transition-colors"
-          title="Center on my location"
+          className={`p-3 rounded-lg shadow-lg transition-colors ${
+            isLocationActive 
+              ? 'bg-blue-100 border-2 border-blue-500' 
+              : 'bg-white hover:bg-gray-50'
+          }`}
+          title={isLocationActive ? "Location monitoring active" : "Center on my location"}
         >
-          <Navigation className="w-5 h-5 text-blue-600" />
+          <Navigation className={`w-5 h-5 ${isLocationActive ? 'text-blue-700' : 'text-blue-600'}`} />
         </button>
         
         {/* Zoom controls */}

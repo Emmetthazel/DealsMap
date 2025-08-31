@@ -141,20 +141,57 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
     }
   };
 
-  const getCurrentLocation = async () => {
+  const handleGetCurrentLocation = async () => {
     setIsGettingLocation(true);
     setError('');
     
     try {
+      // Check if geolocation is supported
+      if (!navigator.geolocation) {
+        throw new Error('Geolocation is not supported by this browser. Please enter coordinates manually.');
+      }
+
+      // Check if we're on HTTPS or localhost (geolocation requirement)
+      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        console.warn('Geolocation may not work on non-HTTPS connections');
+      }
+
       const location = await getCurrentLocation();
-      setFormData(prev => ({
-        ...prev,
-        latitude: location.lat,
-        longitude: location.lng
-      }));
-      setSuccess('Location obtained successfully!');
+      
+      if (location && location.lat && location.lng) {
+        setFormData(prev => ({
+          ...prev,
+          latitude: location.lat.toString(),
+          longitude: location.lng.toString()
+        }));
+        setSuccess(`Location obtained successfully! (${location.lat.toFixed(6)}, ${location.lng.toFixed(6)})`);
+      } else {
+        throw new Error('Invalid location data received');
+      }
     } catch (error) {
-      setError(`Failed to get location: ${error.message}`);
+      console.error('Geolocation error:', error);
+      
+      // Provide specific guidance based on error type
+      let userMessage = 'Failed to get location. ';
+      
+      if (error.message.includes('denied')) {
+        userMessage += 'Please allow location access in your browser settings and try again.';
+      } else if (error.message.includes('unavailable')) {
+        userMessage += 'Location service is unavailable. Please check your device settings.';
+      } else if (error.message.includes('timeout')) {
+        userMessage += 'Location request timed out. Please try again.';
+      } else if (error.message.includes('not supported')) {
+        userMessage += 'Your browser does not support geolocation. Please enter coordinates manually.';
+      } else {
+        userMessage += error.message || 'Please enter coordinates manually.';
+      }
+      
+      setError(userMessage);
+      
+      // Show helpful instructions
+      if (error.message.includes('denied')) {
+        setError(userMessage + ' To enable location access: 1) Click the location icon in your browser address bar, 2) Select "Allow", 3) Refresh the page and try again.');
+      }
     } finally {
       setIsGettingLocation(false);
     }
@@ -415,14 +452,16 @@ const BusinessForm = ({ business = null, onSuccess, onCancel }) => {
             </div>
 
             <div className="flex items-end">
-              <button
-                type="button"
-                onClick={getCurrentLocation}
-                disabled={isGettingLocation}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGettingLocation ? 'Getting Location...' : 'Get Current Location'}
-              </button>
+              <div className="w-full">
+                <button
+                  type="button"
+                  onClick={handleGetCurrentLocation}
+                  disabled={isGettingLocation}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGettingLocation ? 'Getting Location...' : 'Get Current Location'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

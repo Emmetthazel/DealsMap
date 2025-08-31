@@ -37,7 +37,6 @@ const FilterPanel = ({
     
     // Temporal filters
     expiresInDays: 30,
-    showExpiringSoon: false,
     
     // Business filters
     minRating: 0,
@@ -82,7 +81,6 @@ const FilterPanel = ({
       maxDiscount: 100,
       hasDeals: false,
       expiresInDays: 30,
-      showExpiringSoon: false,
       minRating: 0,
       maxRating: 5,
       openNow: false,
@@ -428,16 +426,7 @@ const FilterPanel = ({
                     {filters.selectedCategories.length} selected
                   </span>
                 )}
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('categories');
-                    window.location.reload();
-                  }}
-                  className="ml-auto text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded"
-                  title="Refresh categories from API"
-                >
-                  🔄 Refresh
-                </button>
+
               </h4>
               
               <div className="space-y-3">
@@ -565,15 +554,7 @@ const FilterPanel = ({
                   <div className="text-xs text-gray-500 mt-1">{filters.expiresInDays} days</div>
                 </div>
                 
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={filters.showExpiringSoon}
-                    onChange={(e) => handleFilterChange('showExpiringSoon', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">Show expiring soon deals</span>
-                </label>
+
                 
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">Rating Range</label>
@@ -584,7 +565,11 @@ const FilterPanel = ({
                       max="5"
                       step="0.5"
                       value={filters.minRating}
-                      onChange={(e) => handleFilterChange('minRating', parseFloat(e.target.value))}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        console.log('🔍 Min Rating changed to:', value);
+                        handleFilterChange('minRating', value);
+                      }}
                       className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
                     />
                     <span className="text-gray-500">to</span>
@@ -594,7 +579,11 @@ const FilterPanel = ({
                       max="5"
                       step="0.5"
                       value={filters.maxRating}
-                      onChange={(e) => handleFilterChange('maxRating', parseFloat(e.target.value))}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        console.log('🔍 Max Rating changed to:', value);
+                        handleFilterChange('maxRating', value);
+                      }}
                       className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
                     />
                   </div>

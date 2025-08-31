@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DealService from '../services/DealService';
+import AuthService from '../services/AuthService';
 import { toast } from 'react-hot-toast';
+import useReviewsStore from '../store/reviewsStore';
+import ReviewForm from '../components/ReviewForm';
+import ReviewsList from '../components/ReviewsList';
+import { Star, MessageCircle } from 'lucide-react';
 
 const DealsList = () => {
   const [deals, setDeals] = useState([]);
@@ -21,12 +26,66 @@ const DealsList = () => {
     previous: null,
     current_page: 1
   });
+  
+  // Rating system state
+  const [selectedDealForRating, setSelectedDealForRating] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
   const navigate = useNavigate();
+
+  // Review store
+  const {
+    dealReviews,
+    fetchDealReviews,
+    createReview,
+    updateReview,
+    deleteReview
+  } = useReviewsStore();
 
   // Load deals on component mount
   useEffect(() => {
     loadDeals();
     loadCategories();
+  }, []);
+
+  // Check authentication status - BULLETPROOF VERSION
+  useEffect(() => {
+    const checkAuth = () => {
+      const isAuth = AuthService.isAuthenticated();
+      console.log('🔐 BULLETPROOF Auth check - Token exists:', isAuth, 'Setting authenticated:', isAuth);
+      setIsAuthenticated(isAuth);
+      
+      // If we have a token, we're definitely authenticated
+      if (isAuth) {
+        console.log('🔐 User is authenticated, ensuring state is correct');
+      } else {
+        console.log('🔐 No token found, user is not authenticated');
+      }
+    };
+    
+    // Check immediately
+    checkAuth();
+    
+    // Check every 2 seconds to catch any changes
+    const interval = setInterval(checkAuth, 2000);
+    
+    // Also check on any user interaction
+    const handleUserInteraction = () => {
+      checkAuth();
+    };
+    
+    // Listen for various user interactions
+    document.addEventListener('click', handleUserInteraction);
+    document.addEventListener('keydown', handleUserInteraction);
+    document.addEventListener('scroll', handleUserInteraction);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+      document.removeEventListener('scroll', handleUserInteraction);
+    };
   }, []);
 
   // Load deals with search and filters
@@ -338,6 +397,100 @@ const DealsList = () => {
     }
   };
 
+  // Rating system functions - BULLETPROOF VERSION
+  const handleRateDeal = (deal) => {
+    console.log('🔐 Rating button clicked for deal:', deal.id);
+    
+    // Check if user is authenticated using AuthService (handles both localStorage and sessionStorage)
+    const isAuth = AuthService.isAuthenticated();
+    
+    console.log('🔐 AuthService check:', isAuth);
+    console.log('🔐 State check:', isAuthenticated);
+    
+    if (!isAuth) {
+      console.log('❌ No token found, redirecting to login');
+      toast.error('Please log in to rate deals');
+      navigate('/login');
+      return;
+    }
+    
+    // If we have a token, force authentication state to true
+    if (!isAuthenticated) {
+      console.log('🔐 Token exists but state is false, fixing state...');
+      setIsAuthenticated(true);
+    }
+    
+    console.log('✅ User is authenticated, opening rating modal');
+    setSelectedDealForRating(deal);
+    setShowRatingModal(true);
+    
+    // Load existing reviews for this deal
+    console.log('🔄 Loading reviews for deal:', deal.id);
+    fetchDealReviews(deal.id);
+  };
+
+  const handleReviewSubmit = async (reviewData) => {
+    try {
+      const reviewPayload = {
+        ...reviewData,
+        deal: selectedDealForRating.id
+      };
+      
+      console.log('📝 Review payload being sent:', reviewPayload);
+      console.log('📝 Selected deal:', selectedDealForRating);
+      console.log('📝 Review data:', reviewData);
+      console.log('📝 Rating value type:', typeof reviewData.rating);
+      console.log('📝 Rating value:', reviewData.rating);
+      
+      await createReview(reviewPayload);
+      toast.success('Review submitted successfully!');
+      
+      // Force refresh the reviews data
+      console.log('🔄 Refreshing reviews for deal:', selectedDealForRating.id);
+      
+      // Fetch fresh reviews with force refresh
+      await fetchDealReviews(selectedDealForRating.id);
+      
+      // Also refresh the deals list to update the rating display
+      await loadDeals();
+      
+      setShowRatingModal(false);
+    } catch (error) {
+      console.error('❌ Review submission error:', error);
+      toast.error(error.message || 'Failed to submit review');
+      throw error;
+    }
+  };
+
+  const handleReviewUpdate = async (reviewId, reviewData) => {
+    try {
+      await updateReview(reviewId, reviewData);
+      toast.success('Review updated successfully!');
+      await fetchDealReviews(selectedDealForRating.id);
+    } catch (error) {
+      toast.error(error.message || 'Failed to update review');
+      throw error;
+    }
+  };
+
+  const handleReviewDelete = async (reviewId) => {
+    try {
+      await deleteReview(reviewId);
+      toast.success('Review deleted successfully!');
+      await fetchDealReviews(selectedDealForRating.id);
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete review');
+      throw error;
+    }
+  };
+
+  const getCurrentReviews = () => {
+    if (selectedDealForRating) {
+      return dealReviews[selectedDealForRating.id] || [];
+    }
+    return [];
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -349,6 +502,8 @@ const DealsList = () => {
               Liste des Deals
             </h1>
             <p className="mt-2 text-gray-600">Tous les deals disponibles près de vous</p>
+            
+
           </div>
         </div>
       </div>
@@ -450,7 +605,7 @@ const DealsList = () => {
                     <i className="fas fa-info-circle mr-1"></i>
                     {filters.sort === 'expiry' && 'Deals expirant bientôt en premier'}
                     {filters.sort === 'discount' && 'Deals avec les plus grandes réductions en premier'}
-                    {filters.sort === 'rating' && 'Deals avec les meilleures notes en premier (à implémenter)'}
+                    {filters.sort === 'rating' && 'Deals avec les meilleures notes en premier'}
                     {filters.sort === 'price' && 'Deals les moins chers en premier'}
                   </div>
                 )}
@@ -558,6 +713,18 @@ const DealsList = () => {
                             {deal.title || 'Sans titre'}
                           </h3>
                           
+                          {/* Discount Display - Prominent */}
+                          {deal.discount_percentage && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                <i className="fas fa-percent text-sm"></i>
+                                <span className="text-sm font-bold">
+                                  {deal.discount_percentage}% OFF
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
                           <div className="text-sm text-gray-600 mb-3">
                             <i className="fas fa-map-marker-alt mr-1"></i>
                             {deal.business_name || 'Établissement inconnu'}
@@ -568,27 +735,47 @@ const DealsList = () => {
                             )}
                           </div>
 
-                          {/* Price */}
-                          {deal.original_price && deal.discounted_price && (
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="text-lg font-bold text-blue-600">
-                                {formatPrice(deal.discounted_price)}
+                          {/* Price Display - Compact */}
+                          <div className="flex items-center gap-2 mb-2">
+                            {deal.deal_price && (
+                              <span className="text-base font-semibold text-green-600">
+                                {formatPrice(deal.deal_price)}
                               </span>
+                            )}
+                            {deal.original_price && (
                               <span className="text-sm text-gray-500 line-through">
                                 {formatPrice(deal.original_price)}
                               </span>
-                            </div>
-                          )}
+                            )}
+                          </div>
 
                           {/* Deal Footer */}
                           <div className="flex items-center justify-between text-sm text-gray-500">
                             <div className="flex items-center">
                               <i className="fas fa-star text-yellow-400 mr-1"></i>
-                              <span>4.5 (23)</span>
+                              <span>
+                                {deal.average_rating ? `${deal.average_rating.toFixed(1)}` : '0.0'} 
+                                ({deal.review_count || 0})
+                              </span>
                             </div>
                             <div className="text-xs">
                               {getDaysUntilExpiry(deal.end_date)}
                             </div>
+                          </div>
+
+                          {/* Rating Button */}
+                          <div className="mt-4 flex justify-center">
+                            <button
+                              onClick={() => handleRateDeal(deal)}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg transform hover:scale-105 ${
+                                isAuthenticated 
+                                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700' 
+                                  : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700'
+                              }`}
+                            >
+                              <Star className="w-4 h-4" />
+                              {isAuthenticated ? 'Rate this Deal' : 'Login to Rate'}
+                            </button>
                           </div>
 
                           {/* Usage Info */}
@@ -640,6 +827,50 @@ const DealsList = () => {
                         Suivant
                       </button>
                     )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Rating Modal */}
+            {showRatingModal && selectedDealForRating && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        Rate: {selectedDealForRating.title}
+                      </h2>
+                      <button
+                        onClick={() => setShowRatingModal(false)}
+                        className="text-gray-400 hover:text-gray-600 text-2xl"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    {/* Review Form */}
+                    <ReviewForm
+                      businessId={selectedDealForRating.business?.id}
+                      dealId={selectedDealForRating.id}
+                      onSubmit={handleReviewSubmit}
+                      onCancel={() => setShowRatingModal(false)}
+                    />
+                    
+                    {/* Existing Reviews */}
+                    <div className="mt-8">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Reviews</h3>
+                      <ReviewsList
+                        reviews={getCurrentReviews()}
+                        businessId={selectedDealForRating.business?.id}
+                        dealId={selectedDealForRating.id}
+                        onAddReview={handleReviewSubmit}
+                        onEditReview={handleReviewUpdate}
+                        onDeleteReview={handleReviewDelete}
+                        currentUserId={1}
+                        showAddButton={false}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

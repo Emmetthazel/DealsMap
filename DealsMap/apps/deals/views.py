@@ -31,7 +31,7 @@ class DealViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active', 'business__category']
     search_fields = ['title', 'description', 'business__name']
-    ordering_fields = ['created_at', 'start_date', 'end_date', 'discount_percentage', 'original_price']
+    ordering_fields = ['created_at', 'start_date', 'end_date', 'discount_percentage', 'original_price', 'average_rating', 'review_count']
     ordering = ['-created_at']
     
     def get_serializer_class(self):
@@ -45,7 +45,7 @@ class DealViewSet(viewsets.ModelViewSet):
         return DealSerializer
     
     def get_queryset(self):
-        """Custom queryset with filtering"""
+        """Custom queryset with filtering and review annotations"""
         queryset = super().get_queryset()
         
         # Filter by active deals only for public endpoints
@@ -55,6 +55,16 @@ class DealViewSet(viewsets.ModelViewSet):
         # Filter by business owner if authenticated
         if self.request.user.is_authenticated and self.action in ['my_deals']:
             queryset = queryset.filter(business__owner=self.request.user)
+        
+        # Add review statistics for list actions
+        if self.action in ['list', 'nearby', 'search']:
+            from django.db.models import Avg, Count
+            from apps.reviews.models import Review
+            
+            queryset = queryset.annotate(
+                review_count=Count('reviews', distinct=True),
+                average_rating=Avg('reviews__rating')
+            )
         
         return queryset
     
@@ -267,13 +277,24 @@ class DealViewSet(viewsets.ModelViewSet):
                 print(f"DEBUG: Sorted by discount percentage")
             elif sort_filter == 'rating':
                 # Sort by rating (highest rating first)
-                # Note: Rating field doesn't exist yet, so use creation date as fallback
+                # Handle NULL values properly - deals with no reviews should appear last
+                from django.db.models import Case, When, Value, IntegerField
+                
+                # Annotate with a rating score that treats NULL as 0
+                queryset = queryset.annotate(
+                    rating_score=Case(
+                        When(average_rating__isnull=True, then=Value(0)),
+                        default='average_rating',
+                        output_field=IntegerField(),
+                    )
+                )
+                
                 if search_query:
-                    # If there's a search, combine search priority with creation date sorting
-                    queryset = queryset.order_by('search_priority', '-created_at')
+                    # If there's a search, combine search priority with rating sorting
+                    queryset = queryset.order_by('search_priority', '-rating_score', '-review_count')
                 else:
-                    queryset = queryset.order_by('-created_at')
-                print(f"DEBUG: Rating sorting not implemented yet, using creation date")
+                    queryset = queryset.order_by('-rating_score', '-review_count')
+                print(f"DEBUG: Sorted by rating (highest first) and review count, NULLs treated as 0")
             elif sort_filter == 'price':
                 # Sort by deal price (lowest price first)
                 if search_query:
@@ -333,6 +354,175 @@ class DealViewSet(viewsets.ModelViewSet):
             ).distinct().values('id', 'name')
         
         return Response(categories)
+
+    @method_decorator(cache_page(60 * 10))  # Cache for 10 minutes
+    @action(detail=False, methods=['get'])
+    def combined_filters(self, request):
+        """
+        Get deals with combined filters (categories, distance, deals, etc.)
+        """
+        from django.contrib.gis.geos import Point
+        from django.contrib.gis.db.models.functions import Distance
+        from django.contrib.gis.measure import D
+        
+        queryset = self.get_queryset()
+        
+        # Location-based filtering
+        lat = request.query_params.get('lat') or request.query_params.get('latitude')
+        lng = request.query_params.get('lng') or request.query_params.get('longitude')
+        radius = request.query_params.get('radius', 10)  # Default 10km
+        
+        if lat and lng:
+            try:
+                lat = float(lat)
+                lng = float(lng)
+                radius = float(radius)
+                user_location = Point(lng, lat, srid=4326)
+                
+                queryset = queryset.annotate(
+                    distance=Distance('business__location', user_location)
+                ).filter(
+                    business__location__distance_lte=(user_location, D(km=radius))
+                ).order_by('distance')
+            except ValueError:
+                return Response(
+                    {'error': 'Invalid coordinates or radius'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Category filtering
+        categories = request.query_params.getlist('categories')
+        if categories:
+            queryset = queryset.filter(business__category__id__in=categories)
+        
+        # Discount percentage range
+        min_discount = request.query_params.get('min_discount')
+        max_discount = request.query_params.get('max_discount')
+        if min_discount:
+            try:
+                queryset = queryset.filter(discount_percentage__gte=float(min_discount))
+            except ValueError:
+                pass
+        if max_discount:
+            try:
+                queryset = queryset.filter(discount_percentage__lte=float(max_discount))
+            except ValueError:
+                pass
+        
+        # Price range
+        min_price = request.query_params.get('min_price')
+        max_price = request.query_params.get('max_price')
+        if min_price:
+            try:
+                queryset = queryset.filter(deal_price__gte=float(min_price))
+            except ValueError:
+                pass
+        if max_price:
+            try:
+                queryset = queryset.filter(deal_price__lte=float(max_price))
+            except ValueError:
+                pass
+        
+        # Expiration filtering
+        expires_in_days = request.query_params.get('expires_in_days')
+        if expires_in_days:
+            try:
+                from django.utils import timezone
+                from datetime import timedelta
+                days = int(expires_in_days)
+                future_date = timezone.now() + timedelta(days=days)
+                queryset = queryset.filter(end_date__lte=future_date)
+            except ValueError:
+                pass
+        
+        # Business name search
+        business_name = request.query_params.get('business_name')
+        if business_name:
+            queryset = queryset.filter(business__name__icontains=business_name)
+        
+        # Deal title/description search
+        search_query = request.query_params.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(business__name__icontains=search_query)
+            )
+        
+        # Pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post', 'get', 'delete'])
+    def favorite_filters(self, request):
+        """
+        Save, retrieve, or delete favorite filter combinations
+        """
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        if request.method == 'POST':
+            # Save favorite filter
+            filter_name = request.data.get('name')
+            filter_params = request.data.get('params', {})
+            
+            if not filter_name:
+                return Response(
+                    {'error': 'Filter name is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Store in user's session or create a model for persistent storage
+            # For now, we'll use cache with user-specific key
+            cache_key = f"user_favorite_filters_{request.user.id}"
+            user_filters = cache.get(cache_key, {})
+            user_filters[filter_name] = {
+                'params': filter_params,
+                'created_at': timezone.now().isoformat()
+            }
+            cache.set(cache_key, user_filters, timeout=60*60*24*30)  # 30 days
+            
+            return Response({
+                'message': 'Favorite filter saved successfully',
+                'filter_name': filter_name
+            })
+        
+        elif request.method == 'GET':
+            # Retrieve favorite filters
+            cache_key = f"user_favorite_filters_{request.user.id}"
+            user_filters = cache.get(cache_key, {})
+            return Response(user_filters)
+        
+        elif request.method == 'DELETE':
+            # Delete specific favorite filter
+            filter_name = request.data.get('name')
+            if not filter_name:
+                return Response(
+                    {'error': 'Filter name is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            cache_key = f"user_favorite_filters_{request.user.id}"
+            user_filters = cache.get(cache_key, {})
+            if filter_name in user_filters:
+                del user_filters[filter_name]
+                cache.set(cache_key, user_filters, timeout=60*60*24*30)
+                return Response({
+                    'message': 'Favorite filter deleted successfully'
+                })
+            else:
+                return Response(
+                    {'error': 'Filter not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
     @method_decorator(cache_page(60 * 10))  # Cache for 10 minutes
     @action(detail=False, methods=['get'])

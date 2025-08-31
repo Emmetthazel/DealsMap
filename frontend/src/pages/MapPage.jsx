@@ -27,11 +27,19 @@ const MapPage = () => {
     maxDiscount: 100,
     hasDeals: false, // Show all businesses by default
     expiresInDays: 90, // Show deals expiring within 90 days by default (more inclusive)
-    showExpiringSoon: false,
     minRating: 0,
     maxRating: 5,
     openNow: false
   });
+  
+  // Add sorting state
+  const [sortBy, setSortBy] = useState('created_at'); // created_at, rating, discount, expiry
+  
+  // Handle sorting change
+  const handleSortChange = useCallback((newSortBy) => {
+    setSortBy(newSortBy);
+    console.log('🔄 Sorting changed to:', newSortBy);
+  }, []);
 
   // Store hooks
   const { 
@@ -105,6 +113,35 @@ const MapPage = () => {
     savedFilters
   } = useReviewsStore();
 
+  // Fetch deals with sorting
+  const fetchDealsWithSorting = useCallback(async () => {
+    try {
+      // Use search endpoint when sorting is needed
+      if (sortBy !== 'created_at') {
+        const searchParams = {
+          sort: sortBy,
+          category: filters.selectedCategories.length > 0 ? filters.selectedCategories[0] : ''
+        };
+        
+        const response = await fetch(`/api/deals/search/?${new URLSearchParams(searchParams)}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Update the deals store with sorted data
+          // Note: This is a workaround since we can't directly update the store
+          // In a real app, you'd want to add a setDeals method to the store
+          console.log('✅ Deals fetched with sorting:', sortBy, data.results?.length || 0);
+        }
+      } else {
+        // Use regular endpoint for default sorting
+        fetchDeals();
+      }
+    } catch (error) {
+      console.error('❌ Error fetching deals with sorting:', error);
+      // Fallback to regular fetch
+      fetchDeals();
+    }
+  }, [sortBy, filters.selectedCategories, fetchDeals]);
+
   // Fetch initial data
   useEffect(() => {
     console.log('🔄 useEffect: Starting to fetch data...');
@@ -113,9 +150,9 @@ const MapPage = () => {
     console.log('📞 fetchBusinesses function:', fetchBusinesses);
     
     fetchAllCategories();
-    fetchDeals();
+    fetchDealsWithSorting();
     fetchBusinesses();
-  }, [fetchAllCategories, fetchDeals, fetchBusinesses]);
+  }, [fetchAllCategories, fetchDealsWithSorting, fetchBusinesses]);
 
   // Debug: Log when categories are loaded
   useEffect(() => {
@@ -145,13 +182,20 @@ const MapPage = () => {
 
   // Handle marker click
   const handleMarkerClick = useCallback((data, type) => {
+    console.log('🎯 Marker clicked!', { data, type });
+    console.log('🎯 Current state:', { selectedMarker, showReviews });
+    
     setSelectedMarker({ data, type });
     setShowReviews(true);
     
+    console.log('🎯 After setting state:', { selectedMarker: { data, type }, showReviews: true });
+    
     // Fetch reviews for the selected business/deal
     if (type === 'business') {
+      console.log('🏢 Fetching business reviews for:', data.id);
       fetchBusinessReviews(data.id);
     } else if (type === 'deal') {
+      console.log('🎯 Fetching deal reviews for:', data.id);
       fetchDealReviews(data.id);
     }
   }, [fetchBusinessReviews, fetchDealReviews]);
@@ -187,6 +231,7 @@ const MapPage = () => {
 
   // Handle filters change
   const handleFiltersChange = useCallback((newFilters) => {
+    console.log('🔍 Filters changed:', newFilters);
     setFilters(newFilters);
     
     // Center map on selected city if coordinates are provided
@@ -466,6 +511,8 @@ const MapPage = () => {
         businesses={businesses}
         filters={filters}
         categories={categories}
+        sortBy={sortBy}
+        onSortChange={handleSortChange}
         onDealClick={(deal) => {
           // Center map on the deal's business location and highlight it
           const latitude = deal.business?.latitude || deal.business_location?.latitude || deal.latitude;

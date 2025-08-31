@@ -1,0 +1,35 @@
+{
+  "name": "DealsMap - Découvrez les Meilleurs Deals",
+  "short_name": "DealsMap",
+  "description": "Trouvez des offres exceptionnelles près de chez vous avec notre carte interactive",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "fr",
+  "categories": ["shopping", "business", "lifestyle"],
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Voir les Deals",
+      "short_name": "Deals",
+      "description": "Découvrir les meilleures offres",
+      "url": "/deals"
+    },
+    {
+      "name": "Carte Interactive",
+      "short_name": "Carte",
+      "description": "Explorer les deals sur la carte",
+      "url": "/map"
+    }
+  ]
+}

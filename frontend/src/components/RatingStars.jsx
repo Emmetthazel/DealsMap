@@ -105,7 +105,7 @@ const RatingStars = ({
       
       {showValue && (
         <span className="text-sm font-medium text-gray-700">
-          {currentRating.toFixed(1)}/5
+          {typeof currentRating === 'number' ? currentRating.toFixed(1) : currentRating}/5
         </span>
       )}
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   MapPin, 
   Percent, 
@@ -16,10 +16,27 @@ const DealsListPanel = ({
   businesses = [], 
   filters = {}, 
   categories = [],
+  sortBy: externalSortBy,
+  onSortChange,
   onDealClick,
   onShowOnMap 
 }) => {
-  const [sortBy, setSortBy] = useState('discount'); // discount, distance, rating, expiry
+  const [sortBy, setSortBy] = useState(externalSortBy || 'discount'); // discount, distance, rating, expiry
+  
+  // Sync internal sortBy with external sortBy
+  useEffect(() => {
+    if (externalSortBy && externalSortBy !== sortBy) {
+      setSortBy(externalSortBy);
+    }
+  }, [externalSortBy, sortBy]);
+  
+  // Handle sort change
+  const handleSortChange = (newSortBy) => {
+    setSortBy(newSortBy);
+    if (onSortChange) {
+      onSortChange(newSortBy);
+    }
+  };
 
   // Improved city extraction from address
   const extractCityFromAddress = (address) => {
@@ -185,11 +202,27 @@ const DealsListPanel = ({
 
     // Filter by rating
     if (filters.minRating > 0 || filters.maxRating < 5) {
+      console.log('🔍 Rating filter active:', { minRating: filters.minRating, maxRating: filters.maxRating });
+      const beforeCount = filtered.length;
       filtered = filtered.filter(deal => {
-        const rating = deal.business?.rating || 0;
+        const rating = deal.average_rating || 0;
+        console.log(`🔍 Checking deal "${deal.title}": rating ${rating}, range [${filters.minRating}, ${filters.maxRating}]`);
+        
+        // Handle deals with no rating (0) - they should be included if minRating is 0
+        if (rating === 0 && filters.minRating === 0) {
+          console.log(`🔍 Deal "${deal.title}" included: rating 0 with minRating 0`);
+          return true;
+        }
+        
         const ratingMatch = rating >= filters.minRating && rating <= filters.maxRating;
+        if (!ratingMatch) {
+          console.log(`🔍 Deal "${deal.title}" filtered out: rating ${rating} not in range [${filters.minRating}, ${filters.maxRating}]`);
+        } else {
+          console.log(`🔍 Deal "${deal.title}" included: rating ${rating} in range [${filters.minRating}, ${filters.maxRating}]`);
+        }
         return ratingMatch;
       });
+      console.log(`🔍 Rating filter: ${beforeCount} → ${filtered.length} deals`);
     }
 
     // Filter by expiring soon deals
@@ -273,7 +306,7 @@ const DealsListPanel = ({
         // TODO: Implement distance sorting when location is available
         return sorted;
       case 'rating':
-        return sorted.sort((a, b) => (b.business?.rating || 0) - (a.business?.rating || 0));
+        return sorted.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
       case 'expiry':
         return sorted.sort((a, b) => {
           if (!a.end_date) return 1;
@@ -386,7 +419,7 @@ const DealsListPanel = ({
             {/* Sort dropdown */}
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(e) => handleSortChange(e.target.value)}
               className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="discount">Sort by Discount</option>
@@ -435,7 +468,32 @@ const DealsListPanel = ({
 
                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">{deal.description}</p>
 
-                                 {/* Business Info */}
+                {/* Price Display - Compact */}
+                <div className="flex items-center gap-2 mt-2 mb-2">
+                  {deal.deal_price && (
+                    <span className="text-sm font-semibold text-green-600">
+                      {deal.deal_price} DH
+                    </span>
+                  )}
+                  {deal.original_price && (
+                    <span className="text-xs text-gray-500 line-through">
+                      {deal.original_price} DH
+                    </span>
+                  )}
+                </div>
+
+                {/* Rating Display - Prominent */}
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-400" />
+                    <span className="text-sm font-medium text-gray-700">
+                      {deal.average_rating ? `${deal.average_rating.toFixed(1)}` : '0.0'} 
+                      ({deal.review_count || 0})
+                    </span>
+                  </div>
+                </div>
+
+                {/* Business Info */}
                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                    <div className="flex items-center gap-1">
                      <MapPin className="w-3 h-3" />
@@ -449,12 +507,7 @@ const DealsListPanel = ({
                      </div>
                    )}
                    
-                   {deal.business?.rating && (
-                     <div className="flex items-center gap-1">
-                       <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                       <span>{deal.business.rating}</span>
-                     </div>
-                   )}
+
                  </div>
 
                 {/* Additional Info */}

@@ -31,6 +31,10 @@ class ReviewAdmin(admin.ModelAdmin):
         ('Status & Moderation', {
             'fields': ('status', 'moderated_at', 'moderated_by')
         }),
+        ('Owner Response', {
+            'fields': ('owner_response', 'owner_response_at'),
+            'classes': ('collapse',)
+        }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)

@@ -152,7 +152,9 @@ const useReviewsStore = create(
           try {
             set({ isLoading: true, error: null });
             
+            console.log('🔄 Creating review with data:', reviewData);
             const newReview = await ReviewService.createReview(reviewData);
+            console.log('✅ Review created, response:', newReview);
             
             // Add to appropriate lists
             set(state => {
@@ -164,6 +166,7 @@ const useReviewsStore = create(
               
               if (newReview.business) {
                 const businessId = newReview.business;
+                console.log('🔄 Updating business reviews for:', businessId);
                 updatedBusinessReviews[businessId] = [
                   newReview,
                   ...(updatedBusinessReviews[businessId] || [])
@@ -172,6 +175,7 @@ const useReviewsStore = create(
               
               if (newReview.deal) {
                 const dealId = newReview.deal;
+                console.log('🔄 Updating deal reviews for:', dealId);
                 updatedDealReviews[dealId] = [
                   newReview,
                   ...(updatedDealReviews[dealId] || [])

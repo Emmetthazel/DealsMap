@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DealsMap - Hors ligne</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+        .offline-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .retry-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .retry-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        .features {
+            margin-top: 30px;
+            text-align: left;
+        }
+        .feature {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            color: #666;
+        }
+        .feature-icon {
+            margin-right: 15px;
+            color: #667eea;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📱</div>
+        <h1>Vous êtes hors ligne</h1>
+        <p>Désolé, il semble que vous n'ayez pas de connexion internet. Certaines fonctionnalités de DealsMap peuvent ne pas être disponibles.</p>
+        
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">✅</span>
+                <span>Navigation entre les pages déjà visitées</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">✅</span>
+                <span>Accès aux deals en cache</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">✅</span>
+                <span>Fonctionnalités de base de l'application</span>
+            </div>
+        </div>
+        
+        <button class="retry-btn" onclick="window.location.reload()">
+            Réessayer
+        </button>
+    </div>
+
+    <script>
+        // Check if we're back online
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+
+        // Auto-retry every 30 seconds
+        setInterval(() => {
+            if (navigator.onLine) {
+                window.location.reload();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

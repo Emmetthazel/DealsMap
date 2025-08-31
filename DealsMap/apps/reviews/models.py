@@ -33,7 +33,6 @@ class Review(models.Model):
     rating = models.DecimalField(
         max_digits=2, 
         decimal_places=1, 
-        choices=RATING_CHOICES,
         validators=[MinValueValidator(0.5), MaxValueValidator(5.0)]
     )
     comment = models.TextField(max_length=1000)
@@ -42,6 +41,8 @@ class Review(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     moderated_at = models.DateTimeField(null=True, blank=True)
     moderated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='moderated_reviews')
+    owner_response = models.TextField(max_length=1000, null=True, blank=True, help_text="Response from business owner")
+    owner_response_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         unique_together = [

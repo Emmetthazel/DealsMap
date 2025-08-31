@@ -12,6 +12,7 @@ import {
 import RatingStars from './RatingStars';
 import ReviewForm from './ReviewForm';
 import { toast } from 'react-hot-toast';
+import OwnerResponseForm from './OwnerResponseForm';
 
 const ReviewsList = ({ 
   reviews = [], 
@@ -224,6 +225,42 @@ const ReviewsList = ({
               <div className="text-gray-700 mb-4">
                 {review.comment}
               </div>
+
+              {/* Owner Response */}
+              {review.owner_response && (
+                <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r">
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <MessageCircle className="w-3 h-3 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-blue-800 text-sm mb-1">
+                        Business Owner Response
+                      </div>
+                      <div className="text-blue-700 text-sm">
+                        {review.owner_response}
+                      </div>
+                      <div className="text-blue-500 text-xs mt-1">
+                        {new Date(review.owner_response_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Owner Response Form */}
+              <OwnerResponseForm
+                review={review}
+                onResponseSubmitted={() => {
+                  // Refresh the reviews list to show the new response
+                  if (onAddReview) {
+                    onAddReview();
+                  }
+                }}
+                onCancel={() => {
+                  // Handle cancel if needed
+                }}
+              />
 
               {/* Review Footer */}
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">

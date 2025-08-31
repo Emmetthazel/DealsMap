@@ -80,25 +80,25 @@
 
 #### **Abdelkhalek** – Map (backend filtrage)
 
-- [ ] Endpoint pour filtres combinés (catégories, distance, deals).
-- [ ] Endpoint pour sauvegarde/recharge filtres favoris.
+- [X] Endpoint pour filtres combinés (catégories, distance, deals).
+- [X] Endpoint pour sauvegarde/recharge filtres favoris.
 
 **Validation :**
 
-- [ ] API filtre correctement les résultats.
-- [ ] Sauvegarde/restauration des filtres fonctionne.
+- [X] API filtre correctement les résultats.
+- [X] Sauvegarde/restauration des filtres fonctionne.
 
 #### Zineb – Reviews
 
-- [ ] Interface admin pour modération manuelle.
-- [ ] Calcul de la moyenne des notes en temps réel.
-- [ ] Réponses des propriétaires aux avis.
+- [X] Interface admin pour modération manuelle.
+- [X] Calcul de la moyenne des notes en temps réel.
+- [X] Réponses des propriétaires aux avis.
 
 **Validation :**
 
-- [ ] Modération effective (spam et contenu inapproprié bloqués).
-- [ ] Moyenne des notes correcte.
-- [ ] Réponses visibles pour chaque avis.
+- [X] Modération effective (spam et contenu inapproprié bloqués).
+- [X] Moyenne des notes correcte.
+- [X] Réponses visibles pour chaque avis.
 
 ---
 
@@ -106,22 +106,22 @@
 
 #### **Abdelkhalek** – Map & Filtrage
 
-- [ ] Lazy loading pages avec `React.lazy`.
-- [ ] Memoization composants coûteux (`React.memo`, `useMemo`, `useCallback`).
+- [X] Lazy loading pages avec `React.lazy`.
+- [X] Memoization composants coûteux (`React.memo`, `useMemo`, `useCallback`).
 
 #### Zineb – Frontend optimisations générales
 
-- [ ] Virtual scrolling pour listes longues de deals.
-- [ ] Optimisation images (WebP, lazy loading, CDN).
-- [ ] Service Worker pour cache statique.
-- [ ] Debouncing pour recherche et filtres.
-- [ ] Préchargement données critiques.
+- [X] Virtual scrolling pour listes longues de deals.
+- [X] Optimisation images (WebP, lazy loading, CDN).
+- [X] Service Worker pour cache statique.
+- [X] Debouncing pour recherche et filtres.
+- [X] Préchargement données critiques.
 
 **Validation :**
 
-- [ ] Lighthouse score > 85.
-- [ ] First Contentful Paint < 1.5s.
-- [ ] Performance fluide avec grande quantité de données.
+- [X] Lighthouse score > 85.
+- [X] First Contentful Paint < 1.5s.
+- [X] Performance fluide avec grande quantité de données.
 
 ---
 
@@ -129,22 +129,22 @@
 
 #### **Abdelkhalek** – Map & Frontend
 
-- [ ] Configurer `Service Worker` avec Workbox.
-- [ ] Offline fallbacks pour pages importantes.
-- [ ] Installation prompt personnalisé.
+- [X] Configurer `Service Worker` avec Workbox.
+- [X] Offline fallbacks pour pages importantes.
+- [X] Installation prompt personnalisé.
 
 #### Zineb – Frontend & Backend PWA
 
-- [ ] Manifest.json avec icônes et metadata.
-- [ ] Cache intelligent pour API (`network-first`).
-- [ ] Background sync pour actions offline.
-- [ ] Push notifications avec service worker.
+- [X] Manifest.json avec icônes et metadata.
+- [X] Cache intelligent pour API (`network-first`).
+- [X] Background sync pour actions offline.
+- [X] Push notifications avec service worker.
 
 **Validation :**
 
-- [ ] Application installable sur mobile/desktop.
-- [ ] Fonctionnalité offline opérationnelle.
-- [ ] Notifications push fonctionnent correctement.
+- [X] Application installable sur mobile/desktop.
+- [X] Fonctionnalité offline opérationnelle.
+- [X] Notifications push fonctionnent correctement.
 
 ---
 
@@ -152,68 +152,11 @@
 
 #### **Abdelkhalek** & Zineb
 
-- [ ] Tests frontend pour Map, filtres et PWA.
-- [ ] Tests backend pour endpoints filtres et reviews.
-- [ ] Correction des bugs détectés.
+- [X] Tests frontend pour Map, filtres et PWA.
+- [X] Tests backend pour endpoints filtres et reviews.
+- [X] Correction des bugs détectés.
 
 **Validation :**
 
-- [ ] Flux complet testé : carte interactive → filtres → avis → PWA.
-- [ ] Aucun bug bloquant.
-
----
-
-### **Jour 7 – Finalisation et Démo**
-
-#### Abdo & Zineb
-
-- [ ] QA finale et merge vers `dev`.
-- [ ] Préparer démonstration Sprint 3.
-- [ ] Vérification des performances et accessibilité.
-
-**Validation :**
-
-- [ ] Carte interactive, filtres et reviews fonctionnent ensemble.
-- [ ] PWA installable, responsive et offline.
-- [ ] Démo prête sans bug.
-
----
-
-## ✅ Checklist Fonctionnalités
-
-### Carte & Filtres
-
-- [ ] Carte OpenLayers responsive et fluide.
-- [ ] Marqueurs cliquables avec popups.
-- [ ] Clustering intelligent.
-- [ ] Filtres combinables et sauvegardés.
-- [ ] Partage de recherche via URL.
-
-### Reviews & Notation
-
-- [ ] Système d’avis complet (notes 1-5, demi-étoiles, commentaires).
-- [ ] Modération automatique et manuelle fonctionnelle.
-- [ ] Calcul correct des moyennes.
-- [ ] Notifications aux propriétaires.
-
-### Optimisation & PWA
-
-- [ ] Lazy loading et memoization appliqués.
-- [ ] Virtual scrolling et optimisation images.
-- [ ] Service Worker, cache intelligent et background sync.
-- [ ] Offline complet et installation sur mobile/desktop.
-- [ ] Notifications push opérationnelles.
-
-### Intégration
-
-- [ ] Test complet : carte → filtres → reviews → PWA.
-- [ ] Performance fluide même avec beaucoup de données.
-- [ ] Interface responsive et accessible.
-
----
-
-## 📌 Stratégie de Branches
-
-- Abdo : `abdo-sprint3`
-- Zineb : `zineb-sprint3`
-- Fusion vers `dev` après chaque jalon stable.
+- [X] Flux complet testé : carte interactive → filtres → avis → PWA.
+- [X] Aucun bug bloquant.

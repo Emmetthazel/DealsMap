@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db.models import Avg, Count, Q
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from .models import Review
 from .serializers import (
@@ -64,7 +65,58 @@ class ReviewViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         # Set the user_id from the authenticated user
-        serializer.save(user_id=self.request.user.id)
+        user_id = self.request.user.id
+        deal_id = serializer.validated_data.get('deal')
+        business_id = serializer.validated_data.get('business')
+        
+        print(f"🔐 Creating review for user: {user_id}")
+        print(f"🔐 Review data: {serializer.validated_data}")
+        
+        # Check if user already reviewed this deal/business
+        if deal_id:
+            existing_review = Review.objects.filter(user_id=user_id, deal_id=deal_id).first()
+        elif business_id:
+            existing_review = Review.objects.filter(user_id=user_id, business_id=business_id).first()
+        else:
+            existing_review = None
+        
+        if existing_review:
+            print(f"🔄 User already reviewed, updating existing review: {existing_review.id}")
+            # Update existing review
+            existing_review.rating = serializer.validated_data['rating']
+            existing_review.comment = serializer.validated_data['comment']
+            existing_review.status = 'pending'  # Reset to pending for moderation
+            existing_review.save()
+            print(f"✅ Existing review updated successfully")
+            
+            # Return the updated review data
+            return Response({
+                'id': existing_review.id,
+                'rating': existing_review.rating,
+                'comment': existing_review.comment,
+                'business': existing_review.business_id,
+                'deal': existing_review.deal_id,
+                'status': existing_review.status,
+                'created_at': existing_review.created_at,
+                'updated_at': existing_review.updated_at
+            }, status=status.HTTP_200_OK)
+        else:
+            print(f"🆕 Creating new review")
+            # Create new review
+            new_review = serializer.save(user_id=user_id)
+            print(f"✅ New review created successfully")
+            
+            # Return the new review data
+            return Response({
+                'id': new_review.id,
+                'rating': new_review.rating,
+                'comment': new_review.comment,
+                'business': new_review.business_id,
+                'deal': new_review.deal_id,
+                'status': new_review.status,
+                'created_at': new_review.created_at,
+                'updated_at': new_review.updated_at
+            }, status=status.HTTP_201_CREATED)
     
     @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def approve(self, request, pk=None):
@@ -88,6 +140,41 @@ class ReviewViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response({'message': 'Review rejected successfully'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'])
+    def owner_response(self, request, pk=None):
+        """Allow business owner to respond to a review"""
+        review = self.get_object()
+        
+        # Check if user owns the business or deal
+        if review.business and review.business.owner != request.user:
+            return Response(
+                {'error': 'Only business owner can respond to reviews'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        elif review.deal and review.deal.business.owner != request.user:
+            return Response(
+                {'error': 'Only business owner can respond to reviews'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        response_text = request.data.get('response')
+        if not response_text:
+            return Response(
+                {'error': 'Response text is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update the review with owner response
+        review.owner_response = response_text
+        review.owner_response_at = timezone.now()
+        review.save()
+        
+        return Response({
+            'message': 'Owner response added successfully',
+            'owner_response': response_text,
+            'owner_response_at': review.owner_response_at.isoformat()
+        })
     
     @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
     def pending_moderation(self, request):
@@ -156,9 +243,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(reviews, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[])
     def deal_reviews(self, request):
-        """Get reviews for a specific deal"""
+        """Get reviews for a specific deal - public access"""
         deal_id = request.query_params.get('deal_id')
         if not deal_id:
             return Response(
@@ -166,9 +253,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Show ALL reviews for the deal, not just approved ones
+        # This allows users to see their own pending reviews
         reviews = Review.objects.filter(
-            deal_id=deal_id, 
-            status='approved'
+            deal_id=deal_id
         ).order_by('-created_at')
         
         serializer = self.get_serializer(reviews, many=True)

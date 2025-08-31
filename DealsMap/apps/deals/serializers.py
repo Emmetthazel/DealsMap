@@ -127,7 +127,7 @@ class DealUpdateSerializer(serializers.ModelSerializer):
 
 
 class DealListSerializer(serializers.ModelSerializer):
-    """Simplified serializer for deal lists"""
+    """Simplified serializer for deal lists with review statistics"""
     
     business_name = serializers.CharField(source='business.name', read_only=True)
     business_address = serializers.CharField(source='business.address', read_only=True)
@@ -137,12 +137,17 @@ class DealListSerializer(serializers.ModelSerializer):
     # Override image field to return full URL
     image = serializers.SerializerMethodField()
     
+    # Review statistics fields
+    review_count = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
+    
     class Meta:
         model = Deal
         fields = [
             'id', 'title', 'original_price', 'deal_price', 'discount_percentage',
             'image', 'start_date', 'end_date', 'is_active', 'business_name',
-            'business_address', 'category_name', 'business_location'
+            'business_address', 'category_name', 'business_location',
+            'review_count', 'average_rating'
         ]
     
     def get_business_location(self, obj):
@@ -161,4 +166,14 @@ class DealListSerializer(serializers.ModelSerializer):
             backend_url = 'http://localhost:8000'
             return f"{backend_url}{obj.image.url}"
         return None
-
+    
+    def get_review_count(self, obj):
+        """Get the number of reviews for this deal"""
+        return getattr(obj, 'review_count', 0)
+    
+    def get_average_rating(self, obj):
+        """Get the average rating for this deal"""
+        avg_rating = getattr(obj, 'average_rating', 0)
+        if avg_rating:
+            return float(avg_rating)
+        return 0.0

@@ -1,17 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
-import DealsDashboard from './pages/DealsDashboard';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import BusinessForm from './components/BusinessForm';
-import DealsList from './pages/DealsList';
-import MapPage from './pages/MapPage';
 import Layout from './components/Layout';
 import { PrivateRoute, OwnerRoute } from './components/PrivateRoute';
 import useAuthStore from './store/AuthStore';
+import PerformanceMonitor from './components/PerformanceMonitor';
+import InstallPrompt from './components/InstallPrompt';
+import backgroundSyncService from './services/BackgroundSyncService';
+import pushNotificationService from './services/PushNotificationService';
+
+// Lazy load heavy components for better performance
+const DealsDashboard = lazy(() => import('./pages/DealsDashboard'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Profile = lazy(() => import('./pages/Profile'));
+const BusinessForm = lazy(() => import('./components/BusinessForm'));
+const DealsList = lazy(() => import('./pages/DealsList'));
+const MapPage = lazy(() => import('./pages/MapPage'));
+
+
+// Loading component for Suspense fallback
+const LoadingSpinner = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">Chargement...</p>
+    </div>
+  </div>
+);
 
 const App = () => {
   const { initializeAuth } = useAuthStore();
@@ -41,6 +58,45 @@ const App = () => {
 
     initAuth();
   }, [initializeAuth]);
+
+  // Register advanced service worker for PWA functionality
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          // Register the advanced service worker
+          const registration = await navigator.serviceWorker.register('/sw-advanced.js');
+          console.log('Advanced SW registered: ', registration);
+
+          // Initialize PWA services
+          await backgroundSyncService.init();
+          await pushNotificationService.init();
+
+          // Handle service worker updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New service worker available
+                console.log('New service worker available');
+              }
+            });
+          });
+
+        } catch (registrationError) {
+          console.log('Advanced SW registration failed: ', registrationError);
+          
+          // Fallback to basic service worker
+          try {
+            const fallbackRegistration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Fallback SW registered: ', fallbackRegistration);
+          } catch (fallbackError) {
+            console.log('Fallback SW registration also failed: ', fallbackError);
+          }
+        }
+      });
+    }
+  }, []);
 
   if (isInitializing) {
     return (
@@ -79,7 +135,9 @@ const App = () => {
           element={
             <OwnerRoute>
               <Layout>
-                <Dashboard />
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Dashboard />
+                </Suspense>
               </Layout>
             </OwnerRoute>
           } 
@@ -249,6 +307,8 @@ const App = () => {
           } 
         />
 
+
+
         {/* Catch all route - redirect based on user type */}
         <Route path="*" element={<UserTypeRedirect />} />
       </Routes>
@@ -274,6 +334,10 @@ const App = () => {
           },
         }}
       />
+      
+      {/* PWA Components */}
+      <InstallPrompt />
+      <PerformanceMonitor />
     </Router>
   );
 };
